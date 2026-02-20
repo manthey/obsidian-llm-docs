@@ -88,7 +88,7 @@ async function resolveImages(
 
 	const parts = await Promise.all(promises)
 	if (parts.some((part) => part.type === 'image_url')) {
-		return parts
+        return parts.filter(part => !(part.type === 'text' && (!part.text || !part.text.trim())))
 	}
 	return content
 }
