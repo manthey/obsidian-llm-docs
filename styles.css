@@ -35,6 +35,13 @@ If your plugin does not need CSS, delete this file.
 	margin-top: 0.2em;
 }
 
+.llmdocs-stop-button {
+	position: absolute;
+	top: 100%;
+	margin-top: 0em;
+    margin-left: 3em;
+}
+
 @keyframes rotate90 {
 	0% {
 		transform: rotate(0deg);

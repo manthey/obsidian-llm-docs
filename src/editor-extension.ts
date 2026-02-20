@@ -11,7 +11,7 @@ import {
 import { RangeSetBuilder, Text } from '@codemirror/state'
 
 import { Editor, editorInfoField, getIcon, TFile } from 'obsidian'
-import { fileEvents, getLlmDocsPlugin, isFileBeingProcessed } from './registry'
+import { fileEvents, getLlmDocsPlugin, getStopCallback, isFileBeingProcessed } from './registry'
 
 type PosRange = { from: number; to: number }
 
@@ -171,6 +171,7 @@ class LlmDocsCodemirrorPlugin implements PluginValue {
 
 export class FooterWidget extends WidgetType {
 	private button: HTMLButtonElement
+    private stopButton: HTMLButtonElement
 	private loadingIndicator: HTMLSpanElement
 
 	constructor(
@@ -181,6 +182,7 @@ export class FooterWidget extends WidgetType {
 		super()
 		this.onEvent = this.onEvent.bind(this)
 		this.button = document.createElement('button')
+        this.stopButton = document.createElement('button')
 		this.loadingIndicator = document.createElement('span')
 	}
 
@@ -196,6 +198,14 @@ export class FooterWidget extends WidgetType {
 			await getLlmDocsPlugin().completeDoc(this.editor, this.file)
 		}
 
+		const stopButton = this.stopButton
+		stopButton.innerText = 'Stop'
+		stopButton.className = 'llmdocs-stop-button'
+		stopButton.onclick = () => {
+			const stopFn = getStopCallback(this.file)
+			if (stopFn) stopFn()
+		}
+
 		const loadingIndicator = this.loadingIndicator
 		loadingIndicator.append(getIcon('bot')!)
 		loadingIndicator.className = 'llmdocs-loading-indicator'
@@ -203,7 +213,7 @@ export class FooterWidget extends WidgetType {
 		this.onEvent(true)
 		fileEvents.on('change', this.onEvent)
 
-		container.append(button, loadingIndicator)
+		container.append(button, loadingIndicator, stopButton)
 		return container
 	}
 
@@ -211,8 +221,10 @@ export class FooterWidget extends WidgetType {
 		if (isFileBeingProcessed(this.file)) {
 			this.button.hide()
 			this.loadingIndicator.show()
+            this.stopButton.show()
 		} else {
 			this.loadingIndicator.hide()
+            this.stopButton.hide()
 			if (!calledOnInit) {
 				// Trigger deletion of widget by forcing update of plugin.
 				// The plugin doesn't update by itself since the processing status change comes AFTER the file is finished updating.

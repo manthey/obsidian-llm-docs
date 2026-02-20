@@ -3,6 +3,7 @@ import { SimpleEventEmitter } from './utils'
 import { ValueEmitter } from './utils'
 
 const filesBeingProcessed: Set<TFile> = new Set()
+const stopCallbacks = new Map<TFile, () => void>()
 export const fileEvents = new SimpleEventEmitter()
 
 export function isFileBeingProcessed(file: TFile) {
@@ -16,7 +17,16 @@ export function fileProcessingStarted(file: TFile) {
 
 export function fileProcessingStopped(file: TFile) {
 	filesBeingProcessed.delete(file)
+    stopCallbacks.delete(file)
 	fileEvents.emit('change')
+}
+
+export function setStopCallback(file: TFile, callback: () => void) {
+	stopCallbacks.set(file, callback)
+}
+
+export function getStopCallback(file: TFile): (() => void) | undefined {
+	return stopCallbacks.get(file)
 }
 
 export interface ILlmDocsPlugin {
