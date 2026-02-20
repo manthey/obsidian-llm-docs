@@ -107,4 +107,5 @@ async function expandLinks(
 	return (await Promise.all(promises)).join('')
 }
 
-const splitLinks = (content: string) => splitKeepingSeparators(content, /!?\[\[(.+?)]]/g)
+const linkPattern = /!?\[\[(.+?)]]|!?\[.*?\]\((.+?)\)/g
+const splitLinks = (content: string) => splitKeepingSeparators(content, linkPattern)
