@@ -1,4 +1,4 @@
-import { App, Editor, Workspace } from 'obsidian'
+import { App, Editor, Workspace, arrayBufferToBase64 } from 'obsidian'
 import { DocOpenMethods } from './settings'
 
 const imageExtensions = ['png', 'jpg', 'jpeg', 'gif']
@@ -21,7 +21,7 @@ export function getImageLinkResolver(app: App, sourcePath = ''): (link: string) 
 			return null
 		}
 		const arrayBuffer = await app.vault.readBinary(file)
-		const str = Buffer.from(arrayBuffer).toString('base64')
+        const str = arrayBufferToBase64(arrayBuffer)
 		const type = file.extension === 'jpg' ? 'jpeg' : file.extension
 		return `data:image/${type};base64,${str}`
 	}

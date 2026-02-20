@@ -56,3 +56,32 @@ export class ValueEmitter<T> {
 		}
 	}
 }
+
+export class SimpleEventEmitter {
+	private listeners = new Map<string, Array<(...args: any[]) => void>>()
+
+	on(event: string, listener: (...args: any[]) => void) {
+		if (!this.listeners.has(event)) {
+			this.listeners.set(event, [])
+		}
+		this.listeners.get(event)!.push(listener)
+	}
+
+	off(event: string, listener: (...args: any[]) => void) {
+		const arr = this.listeners.get(event)
+		if (arr) {
+			const index = arr.indexOf(listener)
+			if (index !== -1) arr.splice(index, 1)
+		}
+	}
+
+	emit(event: string, ...args: any[]) {
+		for (const listener of this.listeners.get(event) ?? []) {
+			listener(...args)
+		}
+	}
+
+	removeAllListeners() {
+		this.listeners.clear()
+	}
+}

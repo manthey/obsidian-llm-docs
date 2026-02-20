@@ -1,9 +1,9 @@
 import { Editor, TFile } from 'obsidian'
-import { EventEmitter } from 'node:events'
+import { SimpleEventEmitter } from './utils'
 import { ValueEmitter } from './utils'
 
 const filesBeingProcessed: Set<TFile> = new Set()
-export const fileEvents = new EventEmitter()
+export const fileEvents = new SimpleEventEmitter()
 
 export function isFileBeingProcessed(file: TFile) {
 	return filesBeingProcessed.has(file)

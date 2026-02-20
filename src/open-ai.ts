@@ -1,4 +1,4 @@
-import { EventEmitter } from 'node:events'
+import { SimpleEventEmitter } from './utils'
 import { LlmConnectionSettings } from './settings'
 
 export type OpenaiRole = 'user' | 'assistant' | 'system'
@@ -35,7 +35,7 @@ export async function getAvailableOpenaiModels(settings: LlmConnectionSettings):
 	return data.data.map((model: any) => model.id)
 }
 
-export class OpenaiChatCompletionStream extends EventEmitter {
+export class OpenaiChatCompletionStream extends SimpleEventEmitter {
 	entireContent = ''
 
 	private abortController?: AbortController
@@ -154,7 +154,7 @@ async function throwOnBadResponse(response: Response) {
 	throw new Error(error.message)
 }
 
-export class FakeChatCompletionStream extends EventEmitter {
+export class FakeChatCompletionStream extends SimpleEventEmitter {
 	entireContent = ''
 
 	private stopped = false
