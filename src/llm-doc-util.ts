@@ -1,21 +1,26 @@
-import { OpenaiBasicMessage, OpenaiContent, OpenaiMessage } from './open-ai'
+import { OpenaiBasicMessage, OpenaiContent, OpenaiMessage, OpenaiRole } from './open-ai'
 import { splitKeepingSeparators } from './utils'
 
-export function textToMessages(text: string): OpenaiBasicMessage[] {
+export interface ParsedMessage {
+	role: string
+	content: string
+}
+
+export function textToMessages(text: string): ParsedMessage[] {
 	const lines = text.split('\n')
-	let currentRole: 'system' | 'user' | 'assistant' | null = null
+	let currentRole: string | null = null
 	let currentLines: string[] = []
-	const messages: OpenaiBasicMessage[] = []
+	const messages: ParsedMessage[] = []
 	for (const line of lines) {
-		let newRole: 'system' | 'user' | 'assistant' | null = null
+		let newRole: string | null = null
 		if (line === '# system') {
 			newRole = 'system'
 		}
 		if (line === '# user') {
 			newRole = 'user'
 		}
-		if (line === '# assistant') {
-			newRole = 'assistant'
+		if (/^# assistant\d*$/.test(line)) {
+			newRole = line.slice(2)
 		}
 		if (newRole) {
 			if (currentRole) {
@@ -38,7 +43,7 @@ export function textToMessages(text: string): OpenaiBasicMessage[] {
 	return messages
 }
 
-export function messagesToText(messages: OpenaiBasicMessage[]): string {
+export function messagesToText(messages: ParsedMessage[]): string {
 	const segments = messages.map((message) => `# ${message.role}\n${message.content}`)
 	return segments.join('\n')
 }
@@ -109,3 +114,17 @@ async function expandLinks(
 
 const linkPattern = /!?\[\[(.+?)]]|!?\[.*?\]\((.+?)\)/g
 const splitLinks = (content: string) => splitKeepingSeparators(content, linkPattern)
+
+export function filterMessagesForModel(
+	messages: ParsedMessage[],
+	modelIndex: number,
+	modelCount: number,
+): OpenaiBasicMessage[] {
+	const tag = modelCount > 1 ? `assistant${modelIndex + 1}` : 'assistant'
+	return messages
+		.filter(m => m.role === 'system' || m.role === 'user' || m.role === tag)
+		.map(m => ({
+			role: (m.role === tag ? 'assistant' : m.role) as OpenaiRole,
+			content: m.content,
+		}))
+}

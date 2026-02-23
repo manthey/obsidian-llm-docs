@@ -88,7 +88,7 @@ class LlmDocsCodemirrorPlugin implements PluginValue {
 							class: 'llmdocs-heading-user',
 						}),
 					)
-				} else if (line === '# assistant') {
+				} else if (/^# assistant\d*$/.test(line)) {
 					promptStart = offset + line.length
 					builder.add(
 						offset,

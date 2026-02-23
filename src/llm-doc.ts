@@ -1,12 +1,12 @@
 import { App, Editor, getFrontMatterInfo, parseYaml, TFile } from 'obsidian'
 import { OpenaiChatCompletionStream, OpenaiBasicMessage } from './open-ai'
-import { messagesToText, preprocessMessages, textToMessages } from './llm-doc-util'
+import { filterMessagesForModel, messagesToText, ParsedMessage, preprocessMessages, textToMessages } from './llm-doc-util'
 import { DefaultsSettings, LlmConnectionSettings } from './settings'
 import { getImageLinkResolver, getDocLinkResolver, appendToEditor } from './obsidian-utils'
 import { resolveConnectionForModel } from './connection-models'
 
 export interface LlmDocProperties {
-	model: string
+	model: string | string[]
     /* Additional API parameters extracted from frontmatter keys prefixed with
      * `llm_`. e.g. llm_temperature, llm_top_p, llm_max_tokens, llm_num_ctx
      * (Ollama).
@@ -19,11 +19,12 @@ const completionStream = OpenaiChatCompletionStream
 
 export class LlmDoc {
 	private currentStream: CompletionStream | null = null
+	private stopped = false
 
 	private constructor(
 		private app: App,
 		public file: TFile,
-		private messages: OpenaiBasicMessage[],
+		private messages: ParsedMessage[],
 		private properties: LlmDocProperties,
 	) {}
 
@@ -62,45 +63,54 @@ export class LlmDoc {
 	}
 
 	async stop() {
+		this.stopped = true
 		this.currentStream?.stop()
 	}
 
 	async complete(connections: LlmConnectionSettings[], editor: Editor) {
-		const connectionSettings = await resolveConnectionForModel(connections, this.properties.model)
-		if (!connectionSettings) {
-			throw new Error(`No connection found for model "${this.properties.model}"`)
-		}
+		const models = Array.isArray(this.properties.model) ? this.properties.model : [this.properties.model]
 
 		// update model in frontmatter if not set and default was used
 		await this.app.fileManager.processFrontMatter(this.file, (frontmatter) => {
 			frontmatter.model = this.properties.model
 		})
 
-		const stream = new completionStream(
-			connectionSettings,
-			this.properties.model,
-			await preprocessMessages(
-				this.messages,
-				getDocLinkResolver(this.app, this.file.path),
-				getImageLinkResolver(this.app, this.file.path),
-			),
-            this.properties.llmParams,
-		)
+		for (let i = 0; i < models.length; i++) {
+			if (this.stopped) break
 
-		this.currentStream = stream
+			const model = models[i]
+			const connectionSettings = await resolveConnectionForModel(connections, model)
+			if (!connectionSettings) {
+				throw new Error(`No connection found for model "${model}"`)
+ 			}
 
-		let headingAdded = false
-		stream.on('data', (data: string) => {
-			if (!headingAdded) {
-				this.app.vault.append(this.file, '\n# assistant\n')
-				headingAdded = true
-			}
-			// tried appending to the file using the editor, but that causes janky scrolling during completion, so I've reverted to using vault.append
-			this.app.vault.append(this.file, data)
-			// appendToEditor(editor, data)
-		})
+			const heading = models.length > 1 ? `assistant${i + 1}` : 'assistant'
+			const filtered = filterMessagesForModel(this.messages, i, models.length)
 
-		await stream.result()
+			const stream = new completionStream(
+				connectionSettings,
+				model,
+				await preprocessMessages(
+					filtered,
+					getDocLinkResolver(this.app, this.file.path),
+					getImageLinkResolver(this.app, this.file.path),
+				),
+				this.properties.llmParams,
+			)
+
+			this.currentStream = stream
+
+			let headingAdded = false
+			stream.on('data', (data: string) => {
+				if (!headingAdded) {
+					this.app.vault.append(this.file, `\n# ${heading}\n`)
+					headingAdded = true
+				}
+				this.app.vault.append(this.file, data)
+			})
+
+			await stream.result()
+		}
 
 		await this.app.vault.append(this.file, '\n# user\n')
 
