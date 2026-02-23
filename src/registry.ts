@@ -17,7 +17,7 @@ export function fileProcessingStarted(file: TFile) {
 
 export function fileProcessingStopped(file: TFile) {
 	filesBeingProcessed.delete(file)
-    stopCallbacks.delete(file)
+	stopCallbacks.delete(file)
 	fileEvents.emit('change')
 }
 

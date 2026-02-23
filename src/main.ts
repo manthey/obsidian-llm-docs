@@ -10,7 +10,7 @@ import {
 	ILlmDocsPlugin,
 	isFileBeingProcessed,
 	setLlmDocsPlugin,
-    setStopCallback,
+	setStopCallback,
 } from './registry'
 import { getLeaf } from './obsidian-utils'
 import { SettingsTab } from './settings-tab'
@@ -89,12 +89,12 @@ export default class LlmDocsPlugin extends Plugin implements ILlmDocsPlugin {
 		const stopGeneration = () => {
 			doc?.stop()
 			new Notice('Cancelling...')
-        }
+		}
 
 		const onkeydown = (evt: KeyboardEvent) => {
 			if (evt.key === 'Escape') {
-                stopGeneration()
-            }
+				stopGeneration()
+			}
 		}
 
 		try {
@@ -111,7 +111,7 @@ export default class LlmDocsPlugin extends Plugin implements ILlmDocsPlugin {
 			}
 
 			doc = await LlmDoc.fromFile(this.app, file, this.settings.defaults)
-            setStopCallback(file, stopGeneration)
+			setStopCallback(file, stopGeneration)
 			document.addEventListener('keydown', onkeydown)
 			await doc.complete(this.settings.connections, editor)
 		} catch (error) {

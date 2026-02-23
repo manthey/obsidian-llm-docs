@@ -21,7 +21,7 @@ export function getImageLinkResolver(app: App, sourcePath = ''): (link: string) 
 			return null
 		}
 		const arrayBuffer = await app.vault.readBinary(file)
-        const str = arrayBufferToBase64(arrayBuffer)
+		const str = arrayBufferToBase64(arrayBuffer)
 		const type = file.extension === 'jpg' ? 'jpeg' : file.extension
 		return `data:image/${type};base64,${str}`
 	}

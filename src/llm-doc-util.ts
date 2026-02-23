@@ -93,7 +93,7 @@ async function resolveImages(
 
 	const parts = await Promise.all(promises)
 	if (parts.some((part) => part.type === 'image_url')) {
-        return parts.filter(part => !(part.type === 'text' && (!part.text || !part.text.trim())))
+		return parts.filter((part) => !(part.type === 'text' && (!part.text || !part.text.trim())))
 	}
 	return content
 }
@@ -122,8 +122,8 @@ export function filterMessagesForModel(
 ): OpenaiBasicMessage[] {
 	const tag = modelCount > 1 ? `assistant${modelIndex + 1}` : 'assistant'
 	return messages
-		.filter(m => m.role === 'system' || m.role === 'user' || m.role === tag)
-		.map(m => ({
+		.filter((m) => m.role === 'system' || m.role === 'user' || m.role === tag)
+		.map((m) => ({
 			role: (m.role === tag ? 'assistant' : m.role) as OpenaiRole,
 			content: m.content,
 		}))

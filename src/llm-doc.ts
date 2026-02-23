@@ -1,17 +1,23 @@
 import { App, Editor, getFrontMatterInfo, parseYaml, TFile } from 'obsidian'
 import { OpenaiChatCompletionStream, OpenaiBasicMessage } from './open-ai'
-import { filterMessagesForModel, messagesToText, ParsedMessage, preprocessMessages, textToMessages } from './llm-doc-util'
+import {
+	filterMessagesForModel,
+	messagesToText,
+	ParsedMessage,
+	preprocessMessages,
+	textToMessages,
+} from './llm-doc-util'
 import { DefaultsSettings, LlmConnectionSettings } from './settings'
 import { getImageLinkResolver, getDocLinkResolver, appendToEditor } from './obsidian-utils'
 import { resolveConnectionForModel } from './connection-models'
 
 export interface LlmDocProperties {
 	model: string | string[]
-    /* Additional API parameters extracted from frontmatter keys prefixed with
-     * `llm_`. e.g. llm_temperature, llm_top_p, llm_max_tokens, llm_num_ctx
-     * (Ollama).
-     */
-    llmParams?: Record<string, unknown>
+	/* Additional API parameters extracted from frontmatter keys prefixed with
+	 * `llm_`. e.g. llm_temperature, llm_top_p, llm_max_tokens, llm_num_ctx
+	 * (Ollama).
+	 */
+	llmParams?: Record<string, unknown>
 }
 
 type CompletionStream = OpenaiChatCompletionStream
@@ -32,16 +38,16 @@ export class LlmDoc {
 		const text = await app.vault.read(file)
 		const fmInfo = getFrontMatterInfo(text)
 		const frontmatter = fmInfo.exists ? parseYaml(fmInfo.frontmatter) : {}
-        const llmParams: Record<string, unknown> = {}
-        for (const [key, value] of Object.entries(frontmatter ?? {})) {
-            if (key.startsWith('llm_')) {
-                llmParams[key.slice(4)] = value
-            }
-        }
+		const llmParams: Record<string, unknown> = {}
+		for (const [key, value] of Object.entries(frontmatter ?? {})) {
+			if (key.startsWith('llm_')) {
+				llmParams[key.slice(4)] = value
+			}
+		}
 		const properties: LlmDocProperties = {
 			model: defaults.model,
 			...(frontmatter?.model ? { model: frontmatter.model } : {}),
-            llmParams,
+			llmParams,
 		}
 		const withoutFrontmatter = text.slice(fmInfo.contentStart)
 		const messages = textToMessages(withoutFrontmatter)
@@ -82,7 +88,7 @@ export class LlmDoc {
 			const connectionSettings = await resolveConnectionForModel(connections, model)
 			if (!connectionSettings) {
 				throw new Error(`No connection found for model "${model}"`)
- 			}
+			}
 
 			const heading = models.length > 1 ? `assistant${i + 1}` : 'assistant'
 			const filtered = filterMessagesForModel(this.messages, i, models.length)

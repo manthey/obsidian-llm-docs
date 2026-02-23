@@ -171,7 +171,7 @@ class LlmDocsCodemirrorPlugin implements PluginValue {
 
 export class FooterWidget extends WidgetType {
 	private button: HTMLButtonElement
-    private stopButton: HTMLButtonElement
+	private stopButton: HTMLButtonElement
 	private loadingIndicator: HTMLSpanElement
 
 	constructor(
@@ -182,7 +182,7 @@ export class FooterWidget extends WidgetType {
 		super()
 		this.onEvent = this.onEvent.bind(this)
 		this.button = document.createElement('button')
-        this.stopButton = document.createElement('button')
+		this.stopButton = document.createElement('button')
 		this.loadingIndicator = document.createElement('span')
 	}
 
@@ -221,10 +221,10 @@ export class FooterWidget extends WidgetType {
 		if (isFileBeingProcessed(this.file)) {
 			this.button.hide()
 			this.loadingIndicator.show()
-            this.stopButton.show()
+			this.stopButton.show()
 		} else {
 			this.loadingIndicator.hide()
-            this.stopButton.hide()
+			this.stopButton.hide()
 			if (!calledOnInit) {
 				// Trigger deletion of widget by forcing update of plugin.
 				// The plugin doesn't update by itself since the processing status change comes AFTER the file is finished updating.
