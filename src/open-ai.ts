@@ -44,6 +44,7 @@ export class OpenaiChatCompletionStream extends SimpleEventEmitter {
 		private settings: LlmConnectionSettings,
 		private model: string,
 		private messages: OpenaiMessage[],
+        private llmParams?: Record<string, unknown>,
 	) {
 		super()
 	}
@@ -74,6 +75,7 @@ export class OpenaiChatCompletionStream extends SimpleEventEmitter {
 			model: this.model,
 			messages: this.messages,
 			stream: true,
+            ...this.llmParams,
 		})
 
 		this.abortController = new AbortController()
