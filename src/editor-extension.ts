@@ -88,15 +88,27 @@ class LlmDocsCodemirrorPlugin implements PluginValue {
 							class: 'llmdocs-heading-user',
 						}),
 					)
-				} else if (/^# assistant\d*$/.test(line)) {
-					promptStart = offset + line.length
-					builder.add(
-						offset,
-						promptStart,
-						Decoration.mark({
-							class: 'llmdocs-heading-assistant',
-						}),
-					)
+				} else {
+					const m = line.match(/^(# assistant\d*)(\s+\(.*\))?$/)
+					if (m) {
+						promptStart = offset + line.length
+						builder.add(
+							offset,
+							offset + m[1].length,
+							Decoration.mark({
+								class: 'llmdocs-heading-assistant',
+							}),
+						)
+						if (m[2]) {
+							builder.add(
+								offset + m[1].length,
+								offset + line.length,
+								Decoration.mark({
+									class: 'llmdocs-heading-assistant-model',
+								}),
+							)
+						}
+					}
 				}
 			}
 			offset += line.length + 1

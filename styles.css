@@ -18,6 +18,16 @@ If your plugin does not need CSS, delete this file.
 	color: var(--color-cyan);
 }
 
+.llmdocs-heading-assistant-model {
+	font-size: 0.6em;
+	color: var(--text-muted);
+	pointer-events: none;
+}
+
+.cm-s-obsidian span.cm-url:has(.llmdocs-heading-assistant-model) {
+	text-decoration: none;
+}
+
 .llmdocs-footer {
 	position: relative;
 	display: block;
@@ -39,7 +49,7 @@ If your plugin does not need CSS, delete this file.
 	position: absolute;
 	top: 100%;
 	margin-top: 0em;
-    margin-left: 3em;
+	margin-left: 3em;
 }
 
 @keyframes rotate90 {

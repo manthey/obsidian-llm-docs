@@ -19,8 +19,9 @@ export function textToMessages(text: string): ParsedMessage[] {
 		if (line === '# user') {
 			newRole = 'user'
 		}
-		if (/^# assistant\d*$/.test(line)) {
-			newRole = line.slice(2)
+		const assistantMatch = line.match(/^# (assistant\d*)(\s+\(.*\))?$/)
+		if (assistantMatch) {
+			newRole = assistantMatch[1]
 		}
 		if (newRole) {
 			if (currentRole) {

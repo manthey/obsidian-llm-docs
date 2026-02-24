@@ -74,11 +74,14 @@ export class LlmDoc {
 	}
 
 	async complete(connections: LlmConnectionSettings[], editor: Editor) {
-		const models = Array.isArray(this.properties.model) ? this.properties.model : [this.properties.model]
-
+		let modelProp = this.properties.model
+		if (Array.isArray(modelProp) && modelProp.length === 1) {
+			modelProp = modelProp[0]
+		}
+		const models = Array.isArray(modelProp) ? modelProp : [modelProp]
 		// update model in frontmatter if not set and default was used
 		await this.app.fileManager.processFrontMatter(this.file, (frontmatter) => {
-			frontmatter.model = this.properties.model
+			frontmatter.model = modelProp
 		})
 
 		for (let i = 0; i < models.length; i++) {
@@ -90,7 +93,7 @@ export class LlmDoc {
 				throw new Error(`No connection found for model "${model}"`)
 			}
 
-			const heading = models.length > 1 ? `assistant${i + 1}` : 'assistant'
+			const heading = models.length > 1 ? `assistant${i + 1} (${model})` : 'assistant'
 			const filtered = filterMessagesForModel(this.messages, i, models.length)
 
 			const stream = new completionStream(
