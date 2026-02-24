@@ -213,7 +213,7 @@ export class FooterWidget extends WidgetType {
 		const stopButton = this.stopButton
 		stopButton.innerText = 'Stop'
 		stopButton.className = 'llmdocs-stop-button'
-		stopButton.onclick = () => {
+		stopButton.onmousedown = () => {
 			const stopFn = getStopCallback(this.file)
 			if (stopFn) stopFn()
 		}
