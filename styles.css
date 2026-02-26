@@ -24,7 +24,14 @@ If your plugin does not need CSS, delete this file.
 	pointer-events: none;
 }
 
+.cm-s-obsidian span.cm-formatting-link.cm-url:has(.llmdocs-heading-assistant-model),
 .cm-s-obsidian span.cm-url:has(.llmdocs-heading-assistant-model) {
+	text-decoration: none;
+}
+
+.cm-s-obsidian span.cm-formatting-link.cm-url:has(.llmdocs-heading-assistant-model) .cm-underline,
+.cm-s-obsidian span.cm-url:has(.llmdocs-heading-assistant-model) .cm-underline {
+	color: var(--text-muted);
 	text-decoration: none;
 }
 
