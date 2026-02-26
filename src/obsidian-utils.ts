@@ -6,7 +6,8 @@ const textExtensions = ['txt', 'md', 'markdown', 'html']
 
 export function getDocLinkResolver(app: App, sourcePath = ''): (link: string) => Promise<string | null> {
 	return async function linkResolver(link: string) {
-		const file = app.metadataCache.getFirstLinkpathDest(link, sourcePath)
+		const decodedLink = decodeURIComponent(link)
+		const file = app.metadataCache.getFirstLinkpathDest(decodedLink, sourcePath)
 		if (!file || !textExtensions.includes(file.extension)) {
 			return null
 		}
@@ -14,17 +15,58 @@ export function getDocLinkResolver(app: App, sourcePath = ''): (link: string) =>
 	}
 }
 
-export function getImageLinkResolver(app: App, sourcePath = ''): (link: string) => Promise<string | null> {
+export function getImageLinkResolver(
+	app: App,
+	sourcePath = '',
+	maxImageSize?: number,
+): (link: string) => Promise<string | null> {
 	return async function linkResolver(link: string) {
-		const file = app.metadataCache.getFirstLinkpathDest(link, sourcePath)
+		const decodedLink = decodeURIComponent(link)
+		const file = app.metadataCache.getFirstLinkpathDest(decodedLink, sourcePath)
 		if (!file || !imageExtensions.includes(file.extension)) {
 			return null
 		}
 		const arrayBuffer = await app.vault.readBinary(file)
-		const str = arrayBufferToBase64(arrayBuffer)
 		const type = file.extension === 'jpg' ? 'jpeg' : file.extension
+		if (maxImageSize) {
+			const resized = await resizeImageIfNeeded(arrayBuffer, type, maxImageSize)
+			if (resized) return resized
+		}
+		const str = arrayBufferToBase64(arrayBuffer)
 		return `data:image/${type};base64,${str}`
 	}
+}
+
+async function resizeImageIfNeeded(arrayBuffer: ArrayBuffer, type: string, maxSize: number): Promise<string | null> {
+	return new Promise((resolve) => {
+		const blob = new Blob([arrayBuffer], { type: `image/${type}` })
+		const url = URL.createObjectURL(blob)
+		const img = new Image()
+		img.onload = () => {
+			URL.revokeObjectURL(url)
+			const { width, height } = img
+			if (width <= maxSize && height <= maxSize) {
+				resolve(null)
+				return
+			}
+			const scale = maxSize / Math.max(width, height)
+			const newWidth = Math.round(width * scale)
+			const newHeight = Math.round(height * scale)
+			const canvas = document.createElement('canvas')
+			canvas.width = newWidth
+			canvas.height = newHeight
+			const ctx = canvas.getContext('2d')!
+			ctx.drawImage(img, 0, 0, newWidth, newHeight)
+			const mimeType = type === 'gif' ? 'image/png' : `image/${type}`
+			const dataUrl = canvas.toDataURL(mimeType)
+			resolve(dataUrl)
+		}
+		img.onerror = () => {
+			URL.revokeObjectURL(url)
+			resolve(null)
+		}
+		img.src = url
+	})
 }
 
 export function getLeaf(workspace: Workspace, method: DocOpenMethods) {

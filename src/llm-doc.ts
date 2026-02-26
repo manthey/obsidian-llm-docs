@@ -18,6 +18,7 @@ export interface LlmDocProperties {
 	 * (Ollama).
 	 */
 	llmParams?: Record<string, unknown>
+	maxImageSize?: number
 }
 
 type CompletionStream = OpenaiChatCompletionStream
@@ -40,7 +41,7 @@ export class LlmDoc {
 		const frontmatter = fmInfo.exists ? parseYaml(fmInfo.frontmatter) : {}
 		const llmParams: Record<string, unknown> = {}
 		for (const [key, value] of Object.entries(frontmatter ?? {})) {
-			if (key.startsWith('llm_')) {
+			if (key.startsWith('llm_') && key !== 'llm_max_image_size') {
 				llmParams[key.slice(4)] = value
 			}
 		}
@@ -48,6 +49,7 @@ export class LlmDoc {
 			model: defaults.model,
 			...(frontmatter?.model ? { model: frontmatter.model } : {}),
 			llmParams,
+			...(frontmatter?.llm_max_image_size ? { maxImageSize: frontmatter.llm_max_image_size } : {}),
 		}
 		const withoutFrontmatter = text.slice(fmInfo.contentStart)
 		const messages = textToMessages(withoutFrontmatter)
@@ -102,7 +104,7 @@ export class LlmDoc {
 				await preprocessMessages(
 					filtered,
 					getDocLinkResolver(this.app, this.file.path),
-					getImageLinkResolver(this.app, this.file.path),
+					getImageLinkResolver(this.app, this.file.path, this.properties.maxImageSize),
 				),
 				this.properties.llmParams,
 			)
