@@ -88,6 +88,15 @@ class LlmDocsCodemirrorPlugin implements PluginValue {
 							class: 'llmdocs-heading-user',
 						}),
 					)
+				} else if (line.match(/^# (note|skip).*$/)) {
+					promptStart = offset + line.length
+					builder.add(
+						offset,
+						promptStart,
+						Decoration.mark({
+							class: 'llmdocs-heading-notes',
+						}),
+					)
 				} else {
 					const m = line.match(/^(# assistant\d*)(\s+\(.*\))?$/)
 					if (m) {

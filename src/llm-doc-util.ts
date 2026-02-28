@@ -18,13 +18,15 @@ export function textToMessages(text: string): ParsedMessage[] {
 		}
 		if (line === '# user') {
 			newRole = 'user'
+		} else if (line.match(/^# (note|skip).*$/)) {
+			newRole = 'note'
 		}
 		const assistantMatch = line.match(/^# (assistant\d*)(\s+\(.*\))?$/)
 		if (assistantMatch) {
 			newRole = assistantMatch[1]
 		}
 		if (newRole) {
-			if (currentRole) {
+			if (currentRole && currentRole !== 'note') {
 				messages.push({ role: currentRole, content: currentLines.join('\n') })
 			}
 			currentLines = []
@@ -33,7 +35,7 @@ export function textToMessages(text: string): ParsedMessage[] {
 			currentLines.push(line)
 		}
 	}
-	if (currentRole) {
+	if (currentRole && currentRole !== 'note') {
 		messages.push({ role: currentRole, content: currentLines.join('\n') })
 	}
 
