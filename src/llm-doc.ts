@@ -13,6 +13,7 @@ import { resolveConnectionForModel } from './connection-models'
 
 export interface LlmDocProperties {
 	model: string | string[]
+	connection?: string
 	/* Additional API parameters extracted from frontmatter keys prefixed with
 	 * `llm_`. e.g. llm_temperature, llm_top_p, llm_max_tokens, llm_num_ctx
 	 * (Ollama).
@@ -48,6 +49,7 @@ export class LlmDoc {
 		const properties: LlmDocProperties = {
 			model: defaults.model,
 			...(frontmatter?.model ? { model: frontmatter.model } : {}),
+			...(frontmatter?.llm_connection ? { connection: frontmatter.llm_connection } : {}),
 			llmParams,
 			...(frontmatter?.llm_max_image_size ? { maxImageSize: frontmatter.llm_max_image_size } : {}),
 		}
@@ -90,7 +92,16 @@ export class LlmDoc {
 			if (this.stopped) break
 
 			const model = models[i]
-			const connectionSettings = await resolveConnectionForModel(connections, model)
+			let connectionSettings: LlmConnectionSettings | null
+			if (this.properties.connection) {
+				connectionSettings = connections.find((c) => c.baseUrl === this.properties.connection) ?? {
+					type: 'OpenAI',
+					baseUrl: this.properties.connection,
+					apiKey: '',
+				}
+			} else {
+				connectionSettings = await resolveConnectionForModel(connections, model)
+			}
 			if (!connectionSettings) {
 				throw new Error(`No connection found for model "${model}"`)
 			}
