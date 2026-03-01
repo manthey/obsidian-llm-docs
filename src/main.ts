@@ -16,7 +16,13 @@ import { getLeaf } from './obsidian-utils'
 import { SettingsTab } from './settings-tab'
 import { ModelPickerModal } from './settings-tab/model-picker'
 
+interface WakeLockSentinel {
+	release(): Promise<void>
+	addEventListener(type: 'release', listener: () => void): void
+}
+
 export default class LlmDocsPlugin extends Plugin implements ILlmDocsPlugin {
+	private wakeLock: WakeLockSentinel | null = null
 	settings: PluginSettings
 
 	async onload() {
@@ -85,6 +91,7 @@ export default class LlmDocsPlugin extends Plugin implements ILlmDocsPlugin {
 		fileProcessingStarted(file)
 
 		let doc: LlmDoc
+		await this.acquireWakeLock()
 
 		const stopGeneration = () => {
 			doc?.stop()
@@ -121,6 +128,7 @@ export default class LlmDocsPlugin extends Plugin implements ILlmDocsPlugin {
 		}
 
 		fileProcessingStopped(file)
+		await this.releaseWakeLock()
 	}
 
 	async createNewDoc(docOpenMethod?: DocOpenMethods, systemPrompt?: string) {
@@ -189,5 +197,27 @@ export default class LlmDocsPlugin extends Plugin implements ILlmDocsPlugin {
 			DocOpenMethods.splitVertical,
 			`The user is referencing a document named "${file.name}" with the following content: [[${linkText}]]`,
 		)
+	}
+
+	private async acquireWakeLock() {
+		const nav = navigator as any
+		if (!nav.wakeLock) return
+		try {
+			const sentinel: WakeLockSentinel = await nav.wakeLock.request('screen')
+			sentinel.addEventListener('release', () => {
+				this.wakeLock = null
+			})
+			this.wakeLock = sentinel
+		} catch {
+			this.wakeLock = null
+		}
+	}
+
+	private async releaseWakeLock() {
+		if (!this.wakeLock) return
+		try {
+			await this.wakeLock.release()
+		} catch {}
+		this.wakeLock = null
 	}
 }
