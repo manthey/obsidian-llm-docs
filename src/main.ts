@@ -201,7 +201,7 @@ export default class LlmDocsPlugin extends Plugin implements ILlmDocsPlugin {
 
 	private async acquireWakeLock() {
 		const nav = navigator as any
-		if (!nav.wakeLock) return
+		if (!nav.wakeLock || !this.settings.stayAwake) return
 		try {
 			const sentinel: WakeLockSentinel = await nav.wakeLock.request('screen')
 			sentinel.addEventListener('release', () => {

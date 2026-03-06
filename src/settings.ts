@@ -3,6 +3,7 @@ export interface PluginSettings {
 	connections: LlmConnectionSettings[]
 	defaults: DefaultsSettings
 	pinnedModels: Record<string, boolean>
+	stayAwake: boolean
 }
 
 export enum DocOpenMethods {
@@ -29,6 +30,7 @@ export const defaultPluginSettings: PluginSettings = {
 	docsDir: 'LLM',
 	connections: [],
 	pinnedModels: {},
+	stayAwake: false,
 	defaults: {
 		model: 'gpt-4o',
 		systemPrompt: '',

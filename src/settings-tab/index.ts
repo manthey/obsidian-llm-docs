@@ -58,6 +58,16 @@ export class SettingsTab extends PluginSettingTab {
 				}),
 		)
 
+		new Setting(containerEl)
+			.setName('Stay awake while completing')
+			.setDesc('Prevent the device from sleeping during LLM completions')
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.stayAwake).onChange(async (value) => {
+					this.plugin.settings.stayAwake = value
+					await this.plugin.saveSettings()
+				}),
+			)
+
 		addConnectionsSettings(containerEl, this.plugin, () => this.display())
 
 		new Setting(containerEl).setName('Defaults').setHeading()
