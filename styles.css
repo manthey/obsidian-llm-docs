@@ -135,3 +135,52 @@ If your plugin does not need CSS, delete this file.
 .llmdocs-suggest-item-pin.pinned:hover {
 	background-color: var(--background-primary);
 }
+
+.llmdocs-connection-group {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	padding: 0.75em;
+	margin-bottom: 0.75em;
+}
+
+.llmdocs-connection-row {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 0.5em;
+	margin-bottom: 0.4em;
+}
+
+.llmdocs-connection-row:last-child {
+	margin-bottom: 0;
+}
+
+.llmdocs-connection-index {
+	white-space: nowrap;
+	color: var(--text-muted);
+	font-size: var(--font-smaller);
+	min-width: 2em;
+}
+
+.llmdocs-connection-type {
+	flex: 0 0 auto;
+}
+
+.llmdocs-connection-apikey {
+	flex: 1 1 0;
+	min-width: 0;
+}
+
+.llmdocs-connection-baseurl {
+	flex: 1 1 0;
+	min-width: 0;
+	width: 100%;
+}
+
+.llmdocs-connection-buttons {
+	gap: 0.5em;
+}
+
+.llmdocs-connection-button {
+	flex: 0 0 auto;
+}
