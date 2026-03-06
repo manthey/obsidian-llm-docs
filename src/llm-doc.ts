@@ -67,7 +67,9 @@ export class LlmDoc {
 		const text = messagesToText(messages)
 		const file = await app.vault.create(path, text)
 		await app.fileManager.processFrontMatter(file, (frontmatter) => {
-			frontmatter.model = properties.model
+			if (!frontmatter.model) {
+				frontmatter.model = properties.model
+			}
 		})
 		return new LlmDoc(app, file, messages, properties)
 	}
