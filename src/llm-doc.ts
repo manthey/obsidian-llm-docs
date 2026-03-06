@@ -131,7 +131,14 @@ export class LlmDoc {
 				this.app.vault.append(this.file, data)
 			})
 
-			await stream.result()
+			try {
+				await stream.result()
+			} catch (error) {
+				if (models.length > 1) {
+					continue
+				}
+				throw error
+			}
 		}
 
 		await this.app.vault.append(this.file, '\n# user\n')
