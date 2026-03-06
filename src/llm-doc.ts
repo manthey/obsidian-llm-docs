@@ -34,6 +34,7 @@ export class LlmDoc {
 		public file: TFile,
 		private messages: ParsedMessage[],
 		private properties: LlmDocProperties,
+		private modelExistsInFrontmatter: boolean = true,
 	) {}
 
 	static async fromFile(app: App, file: TFile, defaults: DefaultsSettings): Promise<LlmDoc> {
@@ -55,7 +56,7 @@ export class LlmDoc {
 		}
 		const withoutFrontmatter = text.slice(fmInfo.contentStart)
 		const messages = textToMessages(withoutFrontmatter)
-		return new LlmDoc(app, file, messages, properties)
+		return new LlmDoc(app, file, messages, properties, !!frontmatter?.model)
 	}
 
 	static async create(
@@ -86,10 +87,11 @@ export class LlmDoc {
 		}
 		const models = Array.isArray(modelProp) ? modelProp : [modelProp]
 		// update model in frontmatter if not set and default was used
-		await this.app.fileManager.processFrontMatter(this.file, (frontmatter) => {
-			frontmatter.model = modelProp
-		})
-
+		if (!this.modelExistsInFrontmatter) {
+			await this.app.fileManager.processFrontMatter(this.file, (frontmatter) => {
+				frontmatter.model = modelProp
+			})
+		}
 		for (let i = 0; i < models.length; i++) {
 			if (this.stopped) break
 
