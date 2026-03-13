@@ -66,7 +66,7 @@ export class McpManager {
 
 		if (config.type === 'stdio') {
 			if (Platform.isMobile) {
-				console.error('Stdio MCP servers are not supported on mobile')
+				console.warn('Stdio MCP servers are not supported on mobile')
 				return null
 			}
 			try {
@@ -87,6 +87,7 @@ export class McpManager {
 
 	getTools(filterNames?: string[]): McpTool[] {
 		const allTools = this.servers.flatMap((s) => s.tools)
+		console.info('Tools', allTools)
 		if (!filterNames || filterNames.length === 0) return allTools
 		return allTools.filter((t) => filterNames.includes(t.name))
 	}

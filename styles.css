@@ -95,14 +95,6 @@ If your plugin does not need CSS, delete this file.
 	color: var(--text-muted);
 }
 
-.llmdocs-suggest-item-title {
-	font-weight: 600;
-}
-
-.llmdocs-suggest-item-subtext {
-	color: var(--text-muted);
-}
-
 .llmdocs-suggest-item-pin {
 	float: right;
 	border-radius: 2.5em;
@@ -183,4 +175,40 @@ If your plugin does not need CSS, delete this file.
 
 .llmdocs-connection-button {
 	flex: 0 0 auto;
+}
+.llmdocs-tool-list-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: var(--font-smaller);
+}
+
+.llmdocs-tool-list-table th,
+.llmdocs-tool-list-table td {
+	border: 1px solid var(--background-modifier-border);
+	padding: 0.4em 0.6em;
+	vertical-align: top;
+	text-align: left;
+}
+
+.llmdocs-tool-list-table th {
+	background-color: var(--background-secondary);
+	font-weight: 600;
+}
+
+.llmdocs-tool-list-table tr:hover td {
+	background-color: var(--background-modifier-hover);
+}
+
+.llmdocs-tool-param-list {
+	margin: 0;
+	padding-left: 1.2em;
+}
+
+.llmdocs-tool-param-list li {
+	margin-bottom: 0.2em;
+}
+
+.llmdocs-tool-param-description {
+	color: var(--text-muted);
+	font-size: 0.9em;
 }

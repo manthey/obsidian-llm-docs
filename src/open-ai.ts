@@ -31,12 +31,6 @@ export interface OpenaiToolCall {
 	}
 }
 
-export interface OpenaiToolMessage {
-	role: 'tool'
-	tool_call_id: string
-	content: string
-}
-
 export async function getAvailableOpenaiModels(settings: LlmConnectionSettings): Promise<string[]> {
 	const response = await fetch(`${settings.baseUrl}/v1/models`, {
 		headers: {
@@ -190,38 +184,4 @@ async function throwOnBadResponse(response: Response) {
 		throw new Error('You must provide an OpenAI API key')
 	}
 	throw new Error(error.message)
-}
-
-export class FakeChatCompletionStream extends SimpleEventEmitter {
-	entireContent = ''
-
-	private stopped = false
-
-	constructor(settings: { apiKey: string; messages: OpenaiBasicMessage[]; model?: string }) {
-		super()
-	}
-
-	start() {
-		const repeatingOutput = 'testing '
-
-		const interval = setInterval(() => {
-			if (this.stopped) {
-				clearInterval(interval)
-				this.emit('end')
-				return
-			}
-
-			this.entireContent += repeatingOutput
-			this.emit('data', repeatingOutput)
-		}, 100)
-
-		setTimeout(() => {
-			this.stop()
-			this.emit('end')
-		}, 5000)
-	}
-
-	stop() {
-		this.stopped = true
-	}
 }

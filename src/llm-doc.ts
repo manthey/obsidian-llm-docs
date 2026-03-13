@@ -1,5 +1,5 @@
 import { App, Editor, getFrontMatterInfo, parseYaml, TFile } from 'obsidian'
-import { OpenaiChatCompletionStream, OpenaiBasicMessage, OpenaiMessage, OpenaiToolCall } from './open-ai'
+import { OpenaiChatCompletionStream, OpenaiBasicMessage, OpenaiMessage } from './open-ai'
 import {
 	filterMessagesForModel,
 	messagesToText,
@@ -8,7 +8,7 @@ import {
 	textToMessages,
 } from './llm-doc-util'
 import { DefaultsSettings, LlmConnectionSettings, McpToolServerSettings } from './settings'
-import { getImageLinkResolver, getDocLinkResolver, appendToEditor } from './obsidian-utils'
+import { getImageLinkResolver, getDocLinkResolver } from './obsidian-utils'
 import { resolveConnectionForModel } from './connection-models'
 import { McpManager } from './mcp'
 

@@ -1,5 +1,7 @@
-import { Platform, Setting } from 'obsidian'
+import { Notice, Platform, Setting } from 'obsidian'
 import LlmDocsPlugin from '../main'
+import { McpManager } from '../mcp'
+import { ToolListModal } from './tool-list-modal'
 
 export function addToolServersSettings(containerEl: HTMLElement, plugin: LlmDocsPlugin, redraw: () => void) {
 	new Setting(containerEl)
@@ -90,6 +92,24 @@ export function addToolServersSettings(containerEl: HTMLElement, plugin: LlmDocs
 		}
 
 		const rowButtons = group.createDiv({ cls: 'llmdocs-connection-row llmdocs-connection-buttons' })
+		const listToolsButton = rowButtons.createEl('button', { text: 'List tools', cls: 'llmdocs-connection-button' })
+		listToolsButton.onclick = async () => {
+			listToolsButton.disabled = true
+			listToolsButton.setText('Connecting...')
+			const manager = new McpManager()
+			try {
+				await manager.connect([server])
+				const tools = manager.getTools()
+				const serverLabel = server.name || `Server ${index + 1}`
+				new ToolListModal(plugin.app, tools, `Tools from ${serverLabel}`).open()
+			} catch (error) {
+				new Notice(`Failed to connect to server: ${error}`)
+			} finally {
+				await manager.disconnect()
+				listToolsButton.disabled = false
+				listToolsButton.setText('List tools')
+			}
+		}
 		const removeButton = rowButtons.createEl('button', { text: 'Remove', cls: 'llmdocs-connection-button' })
 		removeButton.onclick = async () => {
 			plugin.settings.toolServers.splice(index, 1)
@@ -98,7 +118,8 @@ export function addToolServersSettings(containerEl: HTMLElement, plugin: LlmDocs
 		}
 	})
 
-	new Setting(containerEl).addButton((button) => {
+	const bottomSettings = new Setting(containerEl)
+	bottomSettings.addButton((button) => {
 		button.setButtonText('Add tool server').onClick(async () => {
 			plugin.settings.toolServers.push({
 				name: '',
@@ -109,4 +130,24 @@ export function addToolServersSettings(containerEl: HTMLElement, plugin: LlmDocs
 			redraw()
 		})
 	})
+	if (plugin.settings.toolServers.length > 1) {
+		bottomSettings.addButton((button) => {
+			button.setButtonText('List all tools').onClick(async () => {
+				button.setDisabled(true)
+				button.setButtonText('Connecting...')
+				const manager = new McpManager()
+				try {
+					await manager.connect(plugin.settings.toolServers)
+					const tools = manager.getTools()
+					new ToolListModal(plugin.app, tools, 'All available tools').open()
+				} catch (error) {
+					new Notice(`Failed to connect to servers: ${error}`)
+				} finally {
+					await manager.disconnect()
+					button.setDisabled(false)
+					button.setButtonText('List all tools')
+				}
+			})
+		})
+	}
 }
