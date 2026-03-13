@@ -4,6 +4,7 @@ import LlmDocsPlugin from '../main'
 import { addConnectionsSettings } from './connections'
 import { modelCacheUpdated } from '../registry'
 import { ModelPickerModal } from './model-picker'
+import { addToolServersSettings } from './tool-servers'
 import { FolderSuggest } from './folder-suggest'
 
 export class SettingsTab extends PluginSettingTab {
@@ -69,6 +70,7 @@ export class SettingsTab extends PluginSettingTab {
 			)
 
 		addConnectionsSettings(containerEl, this.plugin, () => this.display())
+		addToolServersSettings(containerEl, this.plugin, () => this.display())
 
 		new Setting(containerEl).setName('Defaults').setHeading()
 
