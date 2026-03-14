@@ -15,6 +15,9 @@
 		"ChatGPT"
 	],
 	"author": "Shane Lamb",
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.12.1"
+	},
 	"devDependencies": {
 		"@codemirror/language": "^6.10.8",
 		"@types/node": "^25.0.0",

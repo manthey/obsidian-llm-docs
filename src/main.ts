@@ -120,7 +120,7 @@ export default class LlmDocsPlugin extends Plugin implements ILlmDocsPlugin {
 			doc = await LlmDoc.fromFile(this.app, file, this.settings.defaults)
 			setStopCallback(file, stopGeneration)
 			document.addEventListener('keydown', onkeydown)
-			await doc.complete(this.settings.connections, editor)
+			await doc.complete(this.settings.connections, editor, this.settings.toolServers)
 		} catch (error) {
 			new Notice(error)
 		} finally {

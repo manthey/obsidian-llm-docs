@@ -1,5 +1,5 @@
 import { App, Editor, getFrontMatterInfo, parseYaml, TFile } from 'obsidian'
-import { OpenaiChatCompletionStream, OpenaiBasicMessage } from './open-ai'
+import { OpenaiChatCompletionStream, OpenaiBasicMessage, OpenaiMessage } from './open-ai'
 import {
 	filterMessagesForModel,
 	messagesToText,
@@ -7,9 +7,10 @@ import {
 	preprocessMessages,
 	textToMessages,
 } from './llm-doc-util'
-import { DefaultsSettings, LlmConnectionSettings } from './settings'
-import { getImageLinkResolver, getDocLinkResolver, appendToEditor } from './obsidian-utils'
+import { DefaultsSettings, LlmConnectionSettings, McpToolServerSettings } from './settings'
+import { getImageLinkResolver, getDocLinkResolver } from './obsidian-utils'
 import { resolveConnectionForModel } from './connection-models'
+import { McpManager } from './mcp'
 
 export interface LlmDocProperties {
 	model: string | string[]
@@ -20,6 +21,8 @@ export interface LlmDocProperties {
 	 */
 	llmParams?: Record<string, unknown>
 	maxImageSize?: number
+	toolFilters?: string[]
+	toolServerOverrides?: McpToolServerSettings[]
 }
 
 type CompletionStream = OpenaiChatCompletionStream
@@ -43,7 +46,10 @@ export class LlmDoc {
 		const frontmatter = fmInfo.exists ? parseYaml(fmInfo.frontmatter) : {}
 		const llmParams: Record<string, unknown> = {}
 		for (const [key, value] of Object.entries(frontmatter ?? {})) {
-			if (key.startsWith('llm_') && key !== 'llm_max_image_size') {
+			if (
+				key.startsWith('llm_') &&
+				!['llm_max_image_size', 'llm_connection', 'llm_tools', 'llm_tool_servers'].includes(key)
+			) {
 				llmParams[key.slice(4)] = value
 			}
 		}
@@ -53,6 +59,8 @@ export class LlmDoc {
 			...(frontmatter?.llm_connection ? { connection: frontmatter.llm_connection } : {}),
 			llmParams,
 			...(frontmatter?.llm_max_image_size ? { maxImageSize: frontmatter.llm_max_image_size } : {}),
+			...(frontmatter?.llm_tools ? { toolFilters: frontmatter.llm_tools } : {}),
+			...(frontmatter?.llm_tool_servers ? { toolServerOverrides: frontmatter.llm_tool_servers } : {}),
 		}
 		const withoutFrontmatter = text.slice(fmInfo.contentStart)
 		const messages = textToMessages(withoutFrontmatter)
@@ -80,7 +88,7 @@ export class LlmDoc {
 		this.currentStream?.stop()
 	}
 
-	async complete(connections: LlmConnectionSettings[], editor: Editor) {
+	async complete(connections: LlmConnectionSettings[], editor: Editor, toolServers: McpToolServerSettings[]) {
 		let modelProp = this.properties.model
 		if (Array.isArray(modelProp) && modelProp.length === 1) {
 			modelProp = modelProp[0]
@@ -91,6 +99,16 @@ export class LlmDoc {
 			await this.app.fileManager.processFrontMatter(this.file, (frontmatter) => {
 				frontmatter.model = modelProp
 			})
+		}
+		const effectiveToolServers = this.properties.toolServerOverrides ?? toolServers
+		let mcpManager: McpManager | null = null
+		if (effectiveToolServers.length > 0) {
+			mcpManager = new McpManager()
+			try {
+				await mcpManager.connect(effectiveToolServers)
+			} catch (error) {
+				console.error('Failed to connect to MCP servers:', error)
+			}
 		}
 		for (let i = 0; i < models.length; i++) {
 			if (this.stopped) break
@@ -113,36 +131,85 @@ export class LlmDoc {
 			const heading = models.length > 1 ? `assistant${i + 1} (${model})` : 'assistant'
 			const filtered = filterMessagesForModel(this.messages, i, models.length)
 
-			const stream = new completionStream(
-				connectionSettings,
-				model,
-				await preprocessMessages(
-					filtered,
-					getDocLinkResolver(this.app, this.file.path),
-					getImageLinkResolver(this.app, this.file.path, this.properties.maxImageSize),
-				),
-				this.properties.llmParams,
+			const preprocessed = await preprocessMessages(
+				filtered,
+				getDocLinkResolver(this.app, this.file.path),
+				getImageLinkResolver(this.app, this.file.path, this.properties.maxImageSize),
 			)
 
-			this.currentStream = stream
-
-			let headingAdded = false
-			stream.on('data', (data: string) => {
-				if (!headingAdded) {
-					this.app.vault.append(this.file, `\n# ${heading}\n`)
-					headingAdded = true
-				}
-				this.app.vault.append(this.file, data)
-			})
+			const openaiTools = mcpManager?.getOpenaiTools(this.properties.toolFilters)
+			const conversationMessages: OpenaiMessage[] = [...preprocessed]
 
 			try {
-				await stream.result()
+				let headingAdded = false
+				let continueLoop = true
+
+				while (continueLoop && !this.stopped) {
+					const stream = new completionStream(
+						connectionSettings,
+						model,
+						conversationMessages,
+						this.properties.llmParams,
+						openaiTools,
+					)
+					this.currentStream = stream
+
+					stream.on('data', (data: string) => {
+						if (!headingAdded) {
+							this.app.vault.append(this.file, `\n# ${heading}\n`)
+							headingAdded = true
+						}
+						this.app.vault.append(this.file, data)
+					})
+
+					await stream.result()
+
+					if (stream.toolCalls.length > 0 && mcpManager) {
+						conversationMessages.push({
+							role: 'assistant',
+							content: stream.entireContent || '',
+							tool_calls: stream.toolCalls,
+						} as any)
+
+						for (const tc of stream.toolCalls) {
+							let args: Record<string, unknown> = {}
+							try {
+								args = JSON.parse(tc.function.arguments)
+							} catch {}
+
+							const result = await mcpManager.callTool({
+								name: tc.function.name,
+								arguments: args,
+							})
+
+							conversationMessages.push({
+								role: 'tool',
+								tool_call_id: tc.id,
+								content: result.content,
+							} as any)
+
+							if (!headingAdded) {
+								this.app.vault.append(this.file, `\n# ${heading}\n`)
+								headingAdded = true
+							}
+							this.app.vault.append(
+								this.file,
+								`\n\`\`\`tool-call ${tc.function.name}\n${tc.function.arguments}\n\`\`\`\n\`\`\`tool-result\n${result.content}\n\`\`\`\n`,
+							)
+						}
+					} else {
+						continueLoop = false
+					}
+				}
 			} catch (error) {
 				if (models.length > 1) {
 					continue
 				}
 				throw error
 			}
+		}
+		if (mcpManager) {
+			await mcpManager.disconnect()
 		}
 
 		await this.app.vault.append(this.file, '\n# user\n')

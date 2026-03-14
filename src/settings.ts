@@ -3,6 +3,7 @@ export interface PluginSettings {
 	connections: LlmConnectionSettings[]
 	defaults: DefaultsSettings
 	pinnedModels: Record<string, boolean>
+	toolServers: McpToolServerSettings[]
 	stayAwake: boolean
 }
 
@@ -26,10 +27,19 @@ export interface LlmConnectionSettings {
 	apiKey: string
 }
 
+export interface McpToolServerSettings {
+	name: string
+	type: 'http' | 'stdio'
+	url?: string
+	command?: string
+	args?: string[]
+	env?: Record<string, string>
+}
 export const defaultPluginSettings: PluginSettings = {
 	docsDir: 'LLM',
 	connections: [],
 	pinnedModels: {},
+	toolServers: [],
 	stayAwake: false,
 	defaults: {
 		model: 'gpt-4o',

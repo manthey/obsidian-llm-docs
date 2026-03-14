@@ -85,9 +85,3 @@ export function getLeaf(workspace: Workspace, method: DocOpenMethods) {
 			return workspace.getLeaf('tab')
 	}
 }
-
-export function appendToEditor(editor: Editor, text: string) {
-	const lastLineNumber = editor.lastLine()
-	const lastLineText = editor.getLine(lastLineNumber)
-	editor.setLine(lastLineNumber, lastLineText + text)
-}

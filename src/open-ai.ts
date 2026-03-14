@@ -1,5 +1,6 @@
 import { SimpleEventEmitter } from './utils'
 import { LlmConnectionSettings } from './settings'
+import { OpenaiToolDef } from './mcp'
 
 export type OpenaiRole = 'user' | 'assistant' | 'system'
 
@@ -21,6 +22,15 @@ export interface OpenaiContent {
 	}
 }
 
+export interface OpenaiToolCall {
+	id: string
+	type: 'function'
+	function: {
+		name: string
+		arguments: string
+	}
+}
+
 export async function getAvailableOpenaiModels(settings: LlmConnectionSettings): Promise<string[]> {
 	const response = await fetch(`${settings.baseUrl}/v1/models`, {
 		headers: {
@@ -39,12 +49,14 @@ export class OpenaiChatCompletionStream extends SimpleEventEmitter {
 	entireContent = ''
 
 	private abortController?: AbortController
+	public toolCalls: OpenaiToolCall[] = []
 
 	constructor(
 		private settings: LlmConnectionSettings,
 		private model: string,
 		private messages: OpenaiMessage[],
 		private llmParams?: Record<string, unknown>,
+		private tools?: OpenaiToolDef[],
 	) {
 		super()
 	}
@@ -71,12 +83,16 @@ export class OpenaiChatCompletionStream extends SimpleEventEmitter {
 	}
 
 	private async doRequest() {
-		const data = JSON.stringify({
+		const recordBody: Record<string, unknown> = {
 			model: this.model,
 			messages: this.messages,
 			stream: true,
 			...this.llmParams,
-		})
+		}
+		if (this.tools && this.tools.length > 0) {
+			recordBody.tools = this.tools
+		}
+		const data = JSON.stringify(recordBody)
 
 		this.abortController = new AbortController()
 
@@ -102,33 +118,47 @@ export class OpenaiChatCompletionStream extends SimpleEventEmitter {
 			done = readerDone
 			if (value) {
 				const chunk = decoder.decode(value, { stream: true })
-				const content = this.parseChunkForContent(chunk)
-				if (content) {
-					this.entireContent += content
-					this.emit('data', content)
-				}
+				this.processChunk(chunk)
 			}
 		}
 	}
 
-	private parseChunkForContent(chunk: string): string {
-		return chunk
-			.toString()
-			.split('\n')
-			.map((line) => {
-				if (line.startsWith('data: ')) {
-					const json = line.slice(6)
-					try {
-						const data = JSON.parse(json)
-						return data?.choices[0]?.delta?.content
-					} catch (ex) {
-						return undefined
-					}
+	private processChunk(chunk: string) {
+		const lines = chunk.toString().split('\n')
+		for (const line of lines) {
+			if (!line.startsWith('data: ')) continue
+			const json = line.slice(6)
+			let data: any
+			try {
+				data = JSON.parse(json)
+			} catch {
+				continue
+			}
+			const delta = data?.choices?.[0]?.delta
+			if (!delta) continue
+
+			if (delta.tool_calls) {
+				for (const tc of delta.tool_calls) {
+					this.mergeToolCallDelta(tc)
 				}
-				return undefined
-			})
-			.filter((data) => data !== undefined)
-			.join('')
+			}
+
+			if (delta.content) {
+				this.entireContent += delta.content
+				this.emit('data', delta.content)
+			}
+		}
+	}
+
+	private mergeToolCallDelta(delta: any) {
+		const index: number = delta.index ?? 0
+		while (this.toolCalls.length <= index) {
+			this.toolCalls.push({ id: '', type: 'function', function: { name: '', arguments: '' } })
+		}
+		const tc = this.toolCalls[index]
+		if (delta.id) tc.id = delta.id
+		if (delta.function?.name) tc.function.name += delta.function.name
+		if (delta.function?.arguments) tc.function.arguments += delta.function.arguments
 	}
 
 	stop() {
@@ -154,38 +184,4 @@ async function throwOnBadResponse(response: Response) {
 		throw new Error('You must provide an OpenAI API key')
 	}
 	throw new Error(error.message)
-}
-
-export class FakeChatCompletionStream extends SimpleEventEmitter {
-	entireContent = ''
-
-	private stopped = false
-
-	constructor(settings: { apiKey: string; messages: OpenaiBasicMessage[]; model?: string }) {
-		super()
-	}
-
-	start() {
-		const repeatingOutput = 'testing '
-
-		const interval = setInterval(() => {
-			if (this.stopped) {
-				clearInterval(interval)
-				this.emit('end')
-				return
-			}
-
-			this.entireContent += repeatingOutput
-			this.emit('data', repeatingOutput)
-		}, 100)
-
-		setTimeout(() => {
-			this.stop()
-			this.emit('end')
-		}, 5000)
-	}
-
-	stop() {
-		this.stopped = true
-	}
 }
