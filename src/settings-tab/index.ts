@@ -90,6 +90,16 @@ export class SettingsTab extends PluginSettingTab {
 			)
 		new Setting(containerEl).setName('Frontmatter parameters (llm_*)').setDesc(
 			createFragment((e) => {
+				const baseParams: [string, string][] = [
+					['model', 'a single model name or a list of models to use for chat'],
+					['llm_connection', 'change the connection endpoint'],
+					['llm_tools', 'a list of tool names to use.  If skipped, all tools are used'],
+					[
+						'llm_tool_servers',
+						'if specified, ignore the configured tool servers and use those sepecified.  This is a list where all tools have keys of name and type (either "stdio" or "http"); stdio tools have additional keys of command, args (a list), and env (a dictionary); and http tools have a key of url',
+					],
+					['llm_max_image_size', 'scale images sent to vision models'],
+				]
 				const params: [string, string][] = [
 					['llm_temperature', 'randomness, 0-2'],
 					['llm_top_p', 'sampling threshold, 0.05-1'],
@@ -105,15 +115,22 @@ export class SettingsTab extends PluginSettingTab {
 					['llm_repeat_last_n', 'recent lookback, 64-512, ollama'],
 					['llm_top_k', 'tokens considered, 5-100, ollama'],
 					['llm_min_p', 'sampling discard, 0.01-0.2'],
-					['llm_max_image_size', 'scale images sent to vision models'],
-					['llm_connection', 'change the connection endpoint'],
 				]
-				e.createSpan({ text: 'Any frontmatter key starting with ' })
+				e.createSpan({ text: 'These frontmatter keys control the process:' })
+				const list1 = e.createEl('ul')
+				baseParams.forEach(([key, desc]) => {
+					const li = list1.createEl('li')
+					li.createEl('code', { text: key })
+					li.createSpan({ text: `: ${desc}` })
+				})
+				e.createSpan({ text: 'Any other frontmatter keys starting with ' })
 				e.createEl('code', { text: 'llm_' })
-				e.createSpan({ text: ' is sent directly to the API. Examples: ' })
-				params.forEach(([key, desc], i) => {
-					e.createEl('code', { text: key })
-					e.createSpan({ text: ` (${desc})${i < params.length - 1 ? ', ' : ''}` })
+				e.createSpan({ text: ' are sent directly to the API. Examples:' })
+				const list2 = e.createEl('ul')
+				params.forEach(([key, desc]) => {
+					const li = list2.createEl('li')
+					li.createEl('code', { text: key })
+					li.createSpan({ text: `: ${desc}` })
 				})
 			}),
 		)

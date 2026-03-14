@@ -31,5 +31,8 @@
 		"ts-jest": "^29.2.5",
 		"tslib": "^2.4.0",
 		"typescript": "^5.0.0"
+	},
+	"overrides": {
+		"test-exclude": "^8.0.0"
 	}
 }
