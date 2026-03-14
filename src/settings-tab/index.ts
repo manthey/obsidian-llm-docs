@@ -90,41 +90,31 @@ export class SettingsTab extends PluginSettingTab {
 			)
 		new Setting(containerEl).setName('Frontmatter parameters (llm_*)').setDesc(
 			createFragment((e) => {
+				const params: [string, string][] = [
+					['llm_temperature', 'randomness, 0-2'],
+					['llm_top_p', 'sampling threshold, 0.05-1'],
+					['llm_max_tokens', 'response size'],
+					['llm_stop', 'stop string(s)'],
+					['llm_seed', 'random seed'],
+					['llm_response_format', '{"type":"json_object"} might work'],
+					['llm_presence_penalty', '-2-2, not ollama'],
+					['llm_frequency_penalty', '-2-2, not ollama'],
+					['llm_num_ctx', 'context size, ollama'],
+					['llm_num_predict', 'response size, ollama'],
+					['llm_repeat_penalty', '1-2, ollama'],
+					['llm_repeat_last_n', 'recent lookback, 64-512, ollama'],
+					['llm_top_k', 'tokens considered, 5-100, ollama'],
+					['llm_min_p', 'sampling discard, 0.01-0.2'],
+					['llm_max_image_size', 'scale images sent to vision models'],
+					['llm_connection', 'change the connection endpoint'],
+				]
 				e.createSpan({ text: 'Any frontmatter key starting with ' })
 				e.createEl('code', { text: 'llm_' })
-				e.createSpan({ text: ' is sent directly to the API.  Examples:' })
-				e.createEl('code', { text: 'llm_temperature' })
-				e.createSpan({ text: ' (randomness, 0-2), ' })
-				e.createEl('code', { text: 'llm_top_p' })
-				e.createSpan({ text: ' (sampling threshold, 0.05-1), ' })
-				e.createEl('code', { text: 'llm_max_tokens' })
-				e.createSpan({ text: ' (response size), ' })
-				e.createEl('code', { text: 'llm_stop' })
-				e.createSpan({ text: ' (stop string(s)), ' })
-				e.createEl('code', { text: 'llm_seed' })
-				e.createSpan({ text: ' (random seed), ' })
-				e.createEl('code', { text: 'llm_response_format' })
-				e.createSpan({ text: ' ({"type":"json_object"} might work), ' })
-				e.createEl('code', { text: 'llm_presence_penalty' })
-				e.createSpan({ text: ' (-2-2, not ollama), ' })
-				e.createEl('code', { text: 'llm_frequency_penalty' })
-				e.createSpan({ text: ' (-2-2, not ollama), ' })
-				e.createEl('code', { text: 'llm_num_ctx' })
-				e.createSpan({ text: ' (context size, ollama), ' })
-				e.createEl('code', { text: 'llm_num_predict' })
-				e.createSpan({ text: ' (response size, ollama), ' })
-				e.createEl('code', { text: 'llm_repeat_penalty' })
-				e.createSpan({ text: ' (1-2, ollama), ' })
-				e.createEl('code', { text: 'llm_repeat_last_n' })
-				e.createSpan({ text: ' (recenct lookback, 64-512, ollama), ' })
-				e.createEl('code', { text: 'llm_top_k' })
-				e.createSpan({ text: ' (tokens considered, 5-100, ollama), ' })
-				e.createEl('code', { text: 'llm_min_p' })
-				e.createSpan({ text: ' (sampling discard, 0.01-0.2).  You can also use ' })
-				e.createEl('code', { text: 'llm_max_image_size' })
-				e.createSpan({ text: ' to scale images sent to vision models, and ' })
-				e.createEl('code', { text: 'llm_connection' })
-				e.createSpan({ text: ' to change the connection endpoint.' })
+				e.createSpan({ text: ' is sent directly to the API. Examples: ' })
+				params.forEach(([key, desc], i) => {
+					e.createEl('code', { text: key })
+					e.createSpan({ text: ` (${desc})${i < params.length - 1 ? ', ' : ''}` })
+				})
 			}),
 		)
 	}
