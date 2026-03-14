@@ -138,7 +138,7 @@ export class LlmDoc {
 			)
 
 			const openaiTools = mcpManager?.getOpenaiTools(this.properties.toolFilters)
-            console.log('Filtered tools', openaiTools);
+			console.log('Filtered tools', openaiTools)
 			const conversationMessages: OpenaiMessage[] = [...preprocessed]
 
 			try {

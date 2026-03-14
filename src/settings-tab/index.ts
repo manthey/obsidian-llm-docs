@@ -93,7 +93,10 @@ export class SettingsTab extends PluginSettingTab {
 				const baseParams: [string, string][] = [
 					['model', 'a single model name or a list of models to use for chat'],
 					['llm_connection', 'change the connection endpoint'],
-					['llm_tools', 'a list of tool names to use.  If skipped, all tools are used'],
+					[
+						'llm_tools',
+						'a list of tool names or tool servers to use.  If skipped, all tools are used.  Use an empty array for no tools',
+					],
 					[
 						'llm_tool_servers',
 						'if specified, ignore the configured tool servers and use those sepecified.  This is a list where all tools have keys of name and type (either "stdio" or "http"); stdio tools have additional keys of command, args (a list), and env (a dictionary); and http tools have a key of url',

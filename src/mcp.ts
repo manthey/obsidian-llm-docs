@@ -99,7 +99,7 @@ export class McpManager {
 				name: t.name,
 				description: t.description,
 				parameters: t.inputSchema,
-                serverName: t.serverName,
+				serverName: t.serverName,
 			},
 		}))
 	}
