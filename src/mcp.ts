@@ -87,9 +87,9 @@ export class McpManager {
 
 	getTools(filterNames?: string[]): McpTool[] {
 		const allTools = this.servers.flatMap((s) => s.tools)
-		console.info('Tools', allTools)
-		if (!filterNames || filterNames.length === 0) return allTools
-		return allTools.filter((t) => filterNames.includes(t.name))
+		console.info('All tools', allTools)
+		if (!filterNames) return allTools
+		return allTools.filter((t) => filterNames.includes(t.name) || filterNames.includes(t.serverName))
 	}
 
 	getOpenaiTools(filterNames?: string[]): OpenaiToolDef[] {
@@ -99,6 +99,7 @@ export class McpManager {
 				name: t.name,
 				description: t.description,
 				parameters: t.inputSchema,
+                serverName: t.serverName,
 			},
 		}))
 	}
