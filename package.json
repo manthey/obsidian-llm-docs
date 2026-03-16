@@ -33,6 +33,7 @@
 		"typescript": "^5.0.0"
 	},
 	"overrides": {
+		"glob": "^13.0.0",
 		"test-exclude": "^8.0.0"
 	}
 }
