@@ -60,11 +60,11 @@ export class McpManager {
 	}
 
 	private async createTransport(config: McpToolServerSettings) {
-		if (config.type === 'http') {
+		if (config.type === 'http' || (!config.type && config.url)) {
 			return new StreamableHTTPClientTransport(new URL(config.url!))
 		}
 
-		if (config.type === 'stdio') {
+		if (config.type === 'stdio' || (!config.type && config.command)) {
 			if (Platform.isMobile) {
 				console.warn('Stdio MCP servers are not supported on mobile')
 				return null
