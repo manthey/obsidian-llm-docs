@@ -18,6 +18,8 @@ export interface ToolCallRequest {
 export interface ToolCallResult {
 	content: string
 	isError: boolean
+	name: string
+	serverName?: string
 }
 
 interface ConnectedServer {
@@ -121,10 +123,16 @@ export class McpManager {
 			return {
 				content: textParts.join('\n'),
 				isError: result.isError === true,
+				name: request.name,
+				serverName: server.serverName,
 			}
 		}
 
-		return { content: `Tool "${request.name}" not found on any connected server`, isError: true }
+		return {
+			content: `Tool "${request.name}" not found on any connected server`,
+			isError: true,
+			name: request.name,
+		}
 	}
 
 	async disconnect(): Promise<void> {

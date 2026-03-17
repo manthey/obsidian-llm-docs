@@ -193,9 +193,14 @@ export class LlmDoc {
 								this.app.vault.append(this.file, `\n# ${heading}\n`)
 								headingAdded = true
 							}
+							console.log('tool call and result', tc, result)
 							this.app.vault.append(
 								this.file,
-								`\n\`\`\`tool-call ${tc.function.name}\n${tc.function.arguments}\n\`\`\`\n\`\`\`tool-result\n${result.content}\n\`\`\`\n`,
+								' `' +
+									`tool: ${result.name}` +
+									(result.serverName ? `, server: ${result.serverName}` : '') +
+									(result.isError ? ', failed' : `, result: ${result.content.length} characters`) +
+									'`\n',
 							)
 						}
 					} else {
