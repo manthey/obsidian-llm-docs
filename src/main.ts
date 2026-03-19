@@ -79,6 +79,27 @@ export default class LlmDocsPlugin extends Plugin implements ILlmDocsPlugin {
 			},
 		})
 
+		this.addCommand({
+			id: 'append_model',
+			name: 'Append another model used in current document',
+			editorCallback: async (editor, view) => {
+				if (!view.file) return
+
+				const model = await new ModelPickerModal(this.app, this).openAndGetResult()
+				if (model) {
+					await this.app.fileManager.processFrontMatter(view.file, (frontmatter) => {
+						let modelList = frontmatter.model
+						if (!Array.isArray(modelList)) {
+							modelList = [modelList]
+						}
+						modelList.push(model)
+						frontmatter.model = modelList
+						new Notice('Changed to ' + modelList.join(', '))
+					})
+				}
+			},
+		})
+
 		this.addSettingTab(new SettingsTab(this.app, this))
 
 		this.registerEditorExtension(llmDocsCodemirrorPlugin)
