@@ -63,7 +63,13 @@ export class McpManager {
 
 	private async createTransport(config: McpToolServerSettings) {
 		if (config.type === 'http' || (!config.type && config.url)) {
-			return new StreamableHTTPClientTransport(new URL(config.url!))
+			const transportOptions: { requestInit?: RequestInit } = {}
+			if (config.headers && Object.keys(config.headers).length > 0) {
+				transportOptions.requestInit = {
+					headers: config.headers,
+				}
+			}
+			return new StreamableHTTPClientTransport(new URL(config.url!), transportOptions)
 		}
 
 		if (config.type === 'stdio' || (!config.type && config.command)) {

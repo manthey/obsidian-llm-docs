@@ -99,7 +99,7 @@ export class SettingsTab extends PluginSettingTab {
 					],
 					[
 						'llm_tool_servers',
-						'if specified, ignore the configured tool servers and use those sepecified.  This is a list where all tools have keys of name and type (either "stdio" or "http"); stdio tools have additional keys of command, args (a list), and env (a dictionary); and http tools have a key of url',
+						'if specified, ignore the configured tool servers and use those specified.  This is a list where all tools have keys of name and type (either "stdio" or "http"); stdio tools have additional keys of command, args (a list), and env (a dictionary); and http tools have keys of url and headers (a dictionary of header name to value)',
 					],
 					['llm_max_image_size', 'scale images sent to vision models'],
 				]

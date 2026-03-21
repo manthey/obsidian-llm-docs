@@ -47,6 +47,27 @@ export function addToolServersSettings(containerEl: HTMLElement, plugin: LlmDocs
 				plugin.settings.toolServers[index].url = urlInput.value
 				await plugin.saveSettings()
 			}
+			const row2b = group.createDiv({ cls: 'llmdocs-connection-row' })
+			const headersInput = row2b.createEl('input', { cls: 'llmdocs-connection-baseurl' })
+			headersInput.type = 'text'
+			headersInput.placeholder = 'Headers (Key:Value, comma-separated, e.g. Authorization:Bearer token123)'
+			headersInput.value = Object.entries(server.headers ?? {})
+				.map(([k, v]) => `${k}:${v}`)
+				.join(', ')
+			headersInput.oninput = async () => {
+				const headers: Record<string, string> = {}
+				headersInput.value
+					.split(',')
+					.filter(Boolean)
+					.forEach((pair) => {
+						const colonIdx = pair.indexOf(':')
+						if (colonIdx > 0) {
+							headers[pair.slice(0, colonIdx).trim()] = pair.slice(colonIdx + 1).trim()
+						}
+					})
+				plugin.settings.toolServers[index].headers = headers
+				await plugin.saveSettings()
+			}
 		} else {
 			const row2 = group.createDiv({ cls: 'llmdocs-connection-row' })
 			const commandInput = row2.createEl('input', { cls: 'llmdocs-connection-baseurl' })
