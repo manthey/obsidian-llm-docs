@@ -100,8 +100,8 @@ export class McpManager {
 		return allTools.filter((t) => filterNames.includes(t.name) || filterNames.includes(t.serverName))
 	}
 
-	getOpenaiTools(filterNames?: string[]): OpenaiToolDef[] {
-		return this.getTools(filterNames).map((t) => ({
+	getOpenaiTools(filterNames?: string[], maxTokens = 8192): OpenaiToolDef[] {
+		const defs = this.getTools(filterNames).map((t) => ({
 			type: 'function' as const,
 			function: {
 				name: t.name,
@@ -110,6 +110,7 @@ export class McpManager {
 				serverName: t.serverName,
 			},
 		}))
+		return fitToolDefsToTokenBudget(defs, maxTokens)
 	}
 
 	async callTool(request: ToolCallRequest): Promise<ToolCallResult> {
@@ -146,6 +147,83 @@ export class McpManager {
 		await Promise.all(promises)
 		this.servers = []
 	}
+}
+
+function estimateTokens(obj: unknown): number {
+    // pure text would be more like 3.5, but braces are tokens
+	return Math.ceil(JSON.stringify(obj).length / 2.25)
+}
+
+type Reducer = (def: OpenaiToolDef) => OpenaiToolDef
+
+function truncateString(s: string, maxLen: number): string {
+	if (s.length <= maxLen) return s
+	return s.slice(0, maxLen) + '...'
+}
+
+function stripNestedDescriptions(schema: Record<string, unknown>): Record<string, unknown> {
+	if (!schema || typeof schema !== 'object') return schema
+	const result: Record<string, unknown> = {}
+	for (const [key, value] of Object.entries(schema)) {
+		if (key === 'description') continue
+		if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+			result[key] = stripNestedDescriptions(value as Record<string, unknown>)
+		} else {
+			result[key] = value
+		}
+	}
+	return result
+}
+
+const reductionPasses: Reducer[] = [
+	// Pass 1: truncate long descriptions on the function itself
+	(def) => ({
+		...def,
+		function: {
+			...def.function,
+			description: truncateString(def.function.description, 100),
+		},
+	}),
+	// Pass 2: remove description fields from parameter schemas
+	(def) => ({
+		...def,
+		function: {
+			...def.function,
+			parameters: stripNestedDescriptions(def.function.parameters),
+		},
+	}),
+	// Pass 3: truncate function-level description further
+	(def) => ({
+		...def,
+		function: {
+			...def.function,
+			description: truncateString(def.function.description, 30),
+		},
+	}),
+	// Pass 4: remove function-level description entirely
+	(def) => ({
+		...def,
+		function: {
+			...def.function,
+			description: '',
+		},
+	}),
+]
+
+function fitToolDefsToTokenBudget(defs: OpenaiToolDef[], maxTokens: number): OpenaiToolDef[] {
+	let current = defs
+	for (const reducer of reductionPasses) {
+		if (estimateTokens(current) <= maxTokens) break
+		console.log(`Reducing tool list size from ${estimateTokens(current)}`)
+		current = current.map(reducer)
+	}
+	if (estimateTokens(current) > maxTokens) {
+		console.log(
+			`Tool definitions (${estimateTokens(current)} estimated tokens) exceed budget (${maxTokens}) ` +
+				`even after all reductions. ${current.length} tools included.`,
+		)
+	}
+	return current
 }
 
 export interface OpenaiToolDef {
