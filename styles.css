@@ -176,6 +176,10 @@ If your plugin does not need CSS, delete this file.
 .llmdocs-connection-button {
 	flex: 0 0 auto;
 }
+.llmdocs-tool-modal {
+	width: 85vw;
+	max-width: 1000px;
+}
 .llmdocs-tool-list-table {
 	width: 100%;
 	border-collapse: collapse;

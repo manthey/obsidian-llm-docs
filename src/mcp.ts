@@ -150,7 +150,7 @@ export class McpManager {
 }
 
 function estimateTokens(obj: unknown): number {
-    // pure text would be more like 3.5, but braces are tokens
+	// pure text would be more like 3.5, but braces are tokens
 	return Math.ceil(JSON.stringify(obj).length / 2.25)
 }
 

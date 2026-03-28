@@ -140,17 +140,6 @@ export function addToolServersSettings(containerEl: HTMLElement, plugin: LlmDocs
 	})
 
 	const bottomSettings = new Setting(containerEl)
-	bottomSettings.addButton((button) => {
-		button.setButtonText('Add tool server').onClick(async () => {
-			plugin.settings.toolServers.push({
-				name: '',
-				type: 'http',
-				url: '',
-			})
-			await plugin.saveSettings()
-			redraw()
-		})
-	})
 	if (plugin.settings.toolServers.length > 1) {
 		bottomSettings.addButton((button) => {
 			button.setButtonText('List all tools').onClick(async () => {
@@ -171,4 +160,15 @@ export function addToolServersSettings(containerEl: HTMLElement, plugin: LlmDocs
 			})
 		})
 	}
+	bottomSettings.addButton((button) => {
+		button.setButtonText('Add tool server').onClick(async () => {
+			plugin.settings.toolServers.push({
+				name: '',
+				type: 'http',
+				url: '',
+			})
+			await plugin.saveSettings()
+			redraw()
+		})
+	})
 }

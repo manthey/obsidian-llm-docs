@@ -12,7 +12,7 @@ export class ToolListModal extends Modal {
 
 	onOpen() {
 		const { contentEl } = this
-
+		this.modalEl.addClass('llmdocs-tool-modal')
 		contentEl.empty()
 		contentEl.createEl('h2', { text: this.title })
 
