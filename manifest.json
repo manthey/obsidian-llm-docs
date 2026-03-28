@@ -1,11 +1,9 @@
 {
 	"id": "llm-docs",
 	"name": "LLM docs",
-	"version": "1.3.0",
+	"version": "1.4.0",
 	"minAppVersion": "1.7.0",
-	"description": "Simple LLM (AI) client using pure markdown documents",
-	"author": "Shane Lamb",
-	"authorUrl": "https://lambo.land",
-	"fundingUrl": "https://ko-fi.com/shanelamb",
+	"description": "LLM client using pure markdown documents based on Shane Lamb's code",
+	"author": "David Manthey",
 	"isDesktopOnly": false
 }
