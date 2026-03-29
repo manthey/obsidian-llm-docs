@@ -15,6 +15,7 @@ import {
 import { getLeaf } from './obsidian-utils'
 import { SettingsTab } from './settings-tab'
 import { ModelPickerModal } from './settings-tab/model-picker'
+import { ToolPickerModal } from './settings-tab/tool-picker'
 
 interface WakeLockSentinel {
 	release(): Promise<void>
@@ -95,6 +96,30 @@ export default class LlmDocsPlugin extends Plugin implements ILlmDocsPlugin {
 						modelList.push(model)
 						frontmatter.model = modelList
 						new Notice('Changed to ' + modelList.join(', '))
+					})
+				}
+			},
+		})
+
+		this.addCommand({
+			id: 'select_tools',
+			name: 'Select tools for current document',
+			editorCallback: async (editor, view) => {
+				if (!view.file) return
+				const file = view.file
+				const currentFilters: string[] | null = await new Promise((resolve) => {
+					this.app.fileManager.processFrontMatter(file, (fm) => {
+						resolve(Array.isArray(fm.llm_tools) ? fm.llm_tools : null)
+					})
+				})
+				const result = await new ToolPickerModal(
+					this.app,
+					this.settings.toolServers,
+					currentFilters,
+				).openAndGetResult()
+				if (result !== null) {
+					await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+						frontmatter.llm_tools = result.length > 0 ? result : undefined
 					})
 				}
 			},

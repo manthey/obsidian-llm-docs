@@ -216,3 +216,15 @@ If your plugin does not need CSS, delete this file.
 	color: var(--text-muted);
 	font-size: 0.9em;
 }
+.modal:has(.llmdocs-tool-picker-row) {
+	width: 85vw;
+	max-width: 1000px;
+}
+
+.llmdocs-tool-picker-row {
+	cursor: pointer;
+	display: flex;
+}
+.llmdocs-tool-row-tool {
+	margin-left: 10px;
+}
