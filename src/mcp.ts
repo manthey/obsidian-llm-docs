@@ -94,6 +94,7 @@ export class McpManager {
 	}
 
 	getTools(filterNames?: string[]): McpTool[] {
+		if (filterNames !== undefined && !filterNames.length) return []
 		const allTools = this.servers.flatMap((s) => s.tools)
 		console.info('All tools', allTools)
 		if (!filterNames) return allTools
