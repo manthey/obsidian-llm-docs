@@ -119,7 +119,7 @@ export default class LlmDocsPlugin extends Plugin implements ILlmDocsPlugin {
 				).openAndGetResult()
 				if (result !== null) {
 					await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-						frontmatter.llm_tools = result.length > 0 ? result : undefined
+						frontmatter.llm_tools = result
 					})
 				}
 			},
