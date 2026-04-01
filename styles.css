@@ -216,15 +216,61 @@ If your plugin does not need CSS, delete this file.
 	color: var(--text-muted);
 	font-size: 0.9em;
 }
-.modal:has(.llmdocs-tool-picker-row) {
+.modal:has(.llmdocs-tool-picker-modal) {
 	width: 85vw;
 	max-width: 1000px;
+	display: flex;
+	flex-direction: column;
+	max-height: 85vh;
+}
+
+.llmdocs-tool-picker-modal {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	flex: 1 1 auto;
+}
+
+.llmdocs-tool-picker-list {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	min-height: 0;
+	padding-right: 0.5em;
+}
+
+.llmdocs-tool-picker-footer {
+	flex: 0 0 auto;
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-end;
+	gap: 0.5em;
+	padding-top: 0.5em;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.llmdocs-tool-picker-section {
+	margin-bottom: 0.4em;
 }
 
 .llmdocs-tool-picker-row {
 	cursor: pointer;
 	display: flex;
 }
+
 .llmdocs-tool-row-tool {
 	margin-left: 10px;
+}
+.llmdocs-tool-picker-summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	cursor: pointer;
+}
+.llmdocs-tool-picker-summary::after {
+	content: '\25B8';
+	font-size: 1.5em;
+	transition: transform 0.2s;
+}
+.llmdocs-tool-picker-section[open] .llmdocs-tool-picker-summary::after {
+	transform: rotate(90deg);
 }

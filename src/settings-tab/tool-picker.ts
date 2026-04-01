@@ -3,10 +3,17 @@ import { McpManager, McpTool } from '../mcp'
 import { McpToolServerSettings } from '../settings'
 import { ValueEmitter } from '../utils'
 
+interface ServerSection {
+	serverName: string
+	detailsEl: HTMLElement
+	options: ToolOption[]
+}
+
 interface ToolOption {
 	label: string
 	value: string
 	type: 'server' | 'tool'
+	serverName: string
 	description: string
 	selected: boolean
 }
@@ -14,7 +21,7 @@ interface ToolOption {
 export class ToolPickerModal extends Modal {
 	private onResult = new ValueEmitter<string[] | null>()
 	private options: ToolOption[] = []
-	private listEl: HTMLElement
+	private listEl: HTMLElement = null!
 
 	constructor(
 		app: App,
@@ -34,15 +41,11 @@ export class ToolPickerModal extends Modal {
 	async onOpen() {
 		const { contentEl } = this
 		contentEl.empty()
+		contentEl.addClass('llmdocs-tool-picker-modal')
 		contentEl.createEl('h3', { text: 'Select tools' })
-
-		this.listEl = contentEl.createDiv()
+		this.listEl = contentEl.createDiv({ cls: 'llmdocs-tool-picker-list' })
 		this.listEl.createEl('p', { text: 'Connecting to tool servers...' })
-
-		const buttonRow = contentEl.createDiv({ cls: 'llmdocs-connection-row llmdocs-connection-buttons' })
-		buttonRow.style.marginTop = '1em'
-		buttonRow.style.justifyContent = 'flex-end'
-
+		const buttonRow = contentEl.createDiv({ cls: 'llmdocs-tool-picker-footer' })
 		const applyButton = buttonRow.createEl('button', { text: 'Apply' })
 		applyButton.onclick = () => {
 			const selected = this.options.filter((o) => o.selected).map((o) => o.value)
@@ -85,6 +88,7 @@ export class ToolPickerModal extends Modal {
 				label: name,
 				value: name,
 				type: 'server',
+				serverName: name,
 				description: `Server (${count} tool${count === 1 ? '' : 's'})`,
 				selected: this.currentFilters?.includes(name) ?? false,
 			})
@@ -95,6 +99,7 @@ export class ToolPickerModal extends Modal {
 				this.options.push({
 					label: tool.name,
 					value: tool.name,
+					serverName: name,
 					type: 'tool',
 					description: tool.description || tool.serverName,
 					selected: this.currentFilters?.includes(tool.name) ?? false,
@@ -110,18 +115,31 @@ export class ToolPickerModal extends Modal {
 			return
 		}
 		this.listEl.createEl('p', { text: 'Select server names to include all their tools, or individual tools.' })
-		for (const option of this.options) {
-			const row = this.listEl.createEl('label', { cls: 'llmdocs-connection-row llmdocs-tool-picker-row' })
-			const checkbox = row.createEl('input', { type: 'checkbox' }) as HTMLInputElement
-			checkbox.checked = option.selected
-			checkbox.onchange = () => {
-				option.selected = checkbox.checked
+		const serverOptions = this.options.filter((o) => o.type === 'server')
+		for (const serverOption of serverOptions) {
+			const toolOptions = this.options.filter((o) => o.type === 'tool' && o.serverName === serverOption.value)
+			const anySelected = serverOption.selected || toolOptions.some((o) => o.selected)
+			const section = this.listEl.createEl('details', { cls: 'llmdocs-tool-picker-section' })
+			if (anySelected) section.setAttribute('open', '')
+			const summary = section.createEl('summary', { cls: 'llmdocs-tool-picker-summary' })
+			this.renderOptionRow(summary, serverOption)
+			for (const toolOption of toolOptions) {
+				this.renderOptionRow(section, toolOption)
 			}
-			const content = row.createDiv({ cls: `llmdocs-tool-row-${option.type}` })
-			content.createEl(option.type === 'server' ? 'strong' : 'span', { text: option.label })
-			content.createEl('br')
-			content.createEl('small', { text: option.description, cls: 'llmdocs-suggest-item-subtext' })
 		}
+	}
+
+	private renderOptionRow(parentEl: HTMLElement, option: ToolOption) {
+		const row = parentEl.createEl('label', { cls: 'llmdocs-connection-row llmdocs-tool-picker-row' })
+		const checkbox = row.createEl('input', { type: 'checkbox' }) as HTMLInputElement
+		checkbox.checked = option.selected
+		checkbox.onchange = () => {
+			option.selected = checkbox.checked
+		}
+		const content = row.createDiv({ cls: `llmdocs-tool-row-${option.type}` })
+		content.createEl(option.type === 'server' ? 'strong' : 'span', { text: option.label })
+		content.createEl('br')
+		content.createEl('small', { text: option.description, cls: 'llmdocs-suggest-item-subtext' })
 	}
 
 	onClose() {
