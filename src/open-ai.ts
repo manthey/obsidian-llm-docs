@@ -88,6 +88,7 @@ export class OpenaiChatCompletionStream extends SimpleEventEmitter {
 			messages: this.messages,
 			stream: true,
 			...this.llmParams,
+			...(this.llmParams ? { options: this.llmParams } : {}),
 		}
 		if (this.tools && this.tools.length > 0) {
 			recordBody.tools = this.tools
@@ -96,7 +97,7 @@ export class OpenaiChatCompletionStream extends SimpleEventEmitter {
 
 		this.abortController = new AbortController()
 
-		const response = await fetch(`${this.settings.baseUrl}/v1/chat/completions`, {
+		let response = await fetch(`${this.settings.baseUrl}/v1/chat/completions`, {
 			method: 'POST',
 			body: data,
 			headers: {
@@ -105,7 +106,22 @@ export class OpenaiChatCompletionStream extends SimpleEventEmitter {
 			},
 			signal: this.abortController.signal,
 		})
-
+		if (recordBody.tools && !response.ok) {
+			const errorText = await response.text()
+			if (errorText.includes('tools') || errorText.includes('unsupported')) {
+				delete recordBody.tools
+				const data = JSON.stringify(recordBody)
+				response = await fetch(`${this.settings.baseUrl}/v1/chat/completions`, {
+					method: 'POST',
+					body: data,
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${this.settings.apiKey}`,
+					},
+					signal: this.abortController.signal,
+				})
+			}
+		}
 		await throwOnBadResponse(response)
 
 		const body: ReadableStream<Uint8Array> = response.body!
