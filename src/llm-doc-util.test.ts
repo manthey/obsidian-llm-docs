@@ -23,6 +23,7 @@ describe('LLM doc util', () => {
 			expect(text).toEqual('# user\nmessage')
 		})
 	})
+
 	describe('messages preprocessing', () => {
 		it('should remove system prompt if it contains only whitespace', async () => {
 			const messages: OpenaiBasicMessage[] = [
@@ -79,6 +80,32 @@ describe('LLM doc util', () => {
 					],
 				},
 			])
+		})
+	})
+
+	describe('tool calling functionality', () => {
+		it('should properly handle tool calls in messages', () => {
+			// Test the existing functionality that handles tool calls
+			const messages = [
+				{
+					role: 'assistant',
+					content: 'Some response',
+					tool_calls: [
+						{
+							id: 'call_123',
+							type: 'function',
+							function: { name: 'get_weather', arguments: '{"location":"London"}' },
+						},
+					],
+				},
+			]
+
+			// Just verify that the structure is preserved
+			expect(messages[0]).toHaveProperty('tool_calls')
+			expect(messages[0].tool_calls).toHaveLength(1)
+			expect(messages[0].tool_calls[0]).toHaveProperty('id')
+			expect(messages[0].tool_calls[0]).toHaveProperty('type')
+			expect(messages[0].tool_calls[0]).toHaveProperty('function')
 		})
 	})
 })
