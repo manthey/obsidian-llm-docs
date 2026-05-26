@@ -106,26 +106,30 @@ export class OpenaiChatCompletionStream extends SimpleEventEmitter {
 			},
 			signal: this.abortController.signal,
 		})
-		if (recordBody.tools && !response.ok) {
-			const errorText = await response.text()
-			if (errorText.includes('tools') || errorText.includes('unsupported')) {
-				delete recordBody.tools
-				const data = JSON.stringify(recordBody)
-				response = await fetch(`${this.settings.baseUrl}/v1/chat/completions`, {
-					method: 'POST',
-					body: data,
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${this.settings.apiKey}`,
-					},
-					signal: this.abortController.signal,
-				})
+		const retryable = [
+			{ key: 'reasoning_effort', error: ['reasoning', 'unsupported'] },
+			{ key: 'tools', error: ['tools', 'unsupported'] },
+		]
+		for (const { key, error } of retryable) {
+			if (recordBody[key] && !response.ok) {
+				const errorText = await response.text()
+				if (error.some((phrase) => errorText.includes(phrase))) {
+					delete recordBody[key]
+					const data = JSON.stringify(recordBody)
+					response = await fetch(`${this.settings.baseUrl}/v1/chat/completions`, {
+						method: 'POST',
+						body: data,
+						headers: {
+							'Content-Type': 'application/json',
+							Authorization: `Bearer ${this.settings.apiKey}`,
+						},
+						signal: this.abortController.signal,
+					})
+				}
 			}
 		}
 		await throwOnBadResponse(response)
-
 		const body: ReadableStream<Uint8Array> = response.body!
-
 		const reader = body.getReader()
 		const decoder = new TextDecoder('utf-8')
 		let done = false
