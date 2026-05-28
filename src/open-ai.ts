@@ -107,7 +107,7 @@ export class OpenaiChatCompletionStream extends SimpleEventEmitter {
 			signal: this.abortController.signal,
 		})
 		const retryable = [
-			{ key: 'reasoning_effort', error: ['reasoning', 'unsupported'] },
+			{ key: 'reasoning_effort', error: ['reasoning', 'thinking', 'unsupported'] },
 			{ key: 'tools', error: ['tools', 'unsupported'] },
 		]
 		for (const { key, error } of retryable) {
