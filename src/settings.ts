@@ -5,6 +5,7 @@ export interface PluginSettings {
 	pinnedModels: Record<string, boolean>
 	toolServers: McpToolServerSettings[]
 	stayAwake: boolean
+	toolsDefaultToAll?: boolean
 }
 
 export enum DocOpenMethods {
@@ -42,6 +43,7 @@ export const defaultPluginSettings: PluginSettings = {
 	pinnedModels: {},
 	toolServers: [],
 	stayAwake: false,
+	toolsDefaultToAll: true,
 	defaults: {
 		model: 'gpt-4o',
 		systemPrompt: '',

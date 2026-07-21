@@ -40,7 +40,12 @@ export class LlmDoc {
 		private modelExistsInFrontmatter: boolean = true,
 	) {}
 
-	static async fromFile(app: App, file: TFile, defaults: DefaultsSettings): Promise<LlmDoc> {
+	static async fromFile(
+		app: App,
+		file: TFile,
+		defaults: DefaultsSettings,
+		useAllToolsByDefault: boolean = true,
+	): Promise<LlmDoc> {
 		const text = await app.vault.read(file)
 		const fmInfo = getFrontMatterInfo(text)
 		const frontmatter = fmInfo.exists ? parseYaml(fmInfo.frontmatter) : {}
@@ -53,13 +58,32 @@ export class LlmDoc {
 				llmParams[key.slice(4)] = value
 			}
 		}
+		// Handle explicit tool selection from frontmatter, or default based on plugin setting
+		let explicitToolFilters: string[] | null
+		const yamlTools = frontmatter?.llm_tools
+		if (Array.isArray(yamlTools)) {
+			explicitToolFilters = yamlTools as string[]
+		} else if (typeof yamlTools === 'string') {
+			explicitToolFilters = [yamlTools]
+		} else {
+			explicitToolFilters = null
+		}
+		let toolFilters: string[] | undefined
+		if (explicitToolFilters !== null) {
+			toolFilters = explicitToolFilters
+		} else if (useAllToolsByDefault) {
+			toolFilters = undefined
+		} else {
+			toolFilters = []
+		}
+
 		const properties: LlmDocProperties = {
 			model: defaults.model,
 			...(frontmatter?.model ? { model: frontmatter.model } : {}),
 			...(frontmatter?.llm_connection ? { connection: frontmatter.llm_connection } : {}),
 			llmParams,
 			...(frontmatter?.llm_max_image_size ? { maxImageSize: frontmatter.llm_max_image_size } : {}),
-			...(frontmatter?.llm_tools ? { toolFilters: frontmatter.llm_tools } : {}),
+			...(toolFilters !== undefined ? { toolFilters } : {}),
 			...(frontmatter?.llm_tool_servers ? { toolServerOverrides: frontmatter.llm_tool_servers } : {}),
 		}
 		const withoutFrontmatter = text.slice(fmInfo.contentStart)

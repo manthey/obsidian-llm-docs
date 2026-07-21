@@ -163,7 +163,7 @@ export default class LlmDocsPlugin extends Plugin implements ILlmDocsPlugin {
 				await view.save()
 			}
 
-			doc = await LlmDoc.fromFile(this.app, file, this.settings.defaults)
+			doc = await LlmDoc.fromFile(this.app, file, this.settings.defaults, this.settings.toolsDefaultToAll ?? true)
 			setStopCallback(file, stopGeneration)
 			document.addEventListener('keydown', onkeydown)
 			await doc.complete(this.settings.connections, editor, this.settings.toolServers)

@@ -69,8 +69,25 @@ export class SettingsTab extends PluginSettingTab {
 				}),
 			)
 
-		addConnectionsSettings(containerEl, this.plugin, () => this.display())
+		new Setting(containerEl)
+			.setName('All tools available by default')
+			.setDesc(
+				createFragment((e) => {
+					e.createSpan({
+						text: 'If disabled, notes without an explicit llm_tools setting will have no MCP tools enabled.',
+					})
+				}),
+			)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.toolsDefaultToAll ?? true).onChange(async (value) => {
+					this.plugin.settings.toolsDefaultToAll = value
+					await this.plugin.saveSettings()
+				}),
+			)
+
 		addToolServersSettings(containerEl, this.plugin, () => this.display())
+
+		addConnectionsSettings(containerEl, this.plugin, () => this.display())
 
 		new Setting(containerEl).setName('Defaults').setHeading()
 
@@ -95,7 +112,7 @@ export class SettingsTab extends PluginSettingTab {
 					['llm_connection', 'change the connection endpoint'],
 					[
 						'llm_tools',
-						'a list of tool names or tool servers to use.  If skipped, all tools are used.  Use an empty array for no tools',
+						'Use the plugin setting to determine default selection (all or none). Explicitly set to array to override.',
 					],
 					[
 						'llm_tool_servers',
