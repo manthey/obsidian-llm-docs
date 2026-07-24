@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals'
-import { messagesToText, preprocessMessages, textToMessages } from './llm-doc-util'
+import { messagesToText, preprocessMessages, textToMessages, filterMessagesForModel, ParsedMessage } from './llm-doc-util'
 import { OpenaiBasicMessage } from './open-ai'
 
 describe('LLM doc util', () => {
@@ -106,6 +106,79 @@ describe('LLM doc util', () => {
 			expect(messages[0].tool_calls[0]).toHaveProperty('id')
 			expect(messages[0].tool_calls[0]).toHaveProperty('type')
 			expect(messages[0].tool_calls[0]).toHaveProperty('function')
+		})
+	})
+
+	describe('filterMessagesForModel fallback logic', () => {
+		it('should handle numbered system/user blocks across multiple models with exact fallback sequence', () => {
+			const messages: ParsedMessage[] = [
+				{ role: 'system', content: 'sys' },
+
+				// Group 2 (User) - only unnumbered user block available for all models
+				{ role: 'user', content: 'userB' },
+
+				// Group 3 (Assistant candidates for first turn)
+				{ role: 'assistant1', content: 'assC' },
+				{ role: 'assistant2', content: 'assD' },
+				{ role: 'assistant3', content: 'assE' },
+
+				// Group 4 (User) - only unnumbered user block
+				{ role: 'user', content: 'userF' },
+
+				// Group 5 (Assistant) - only unnumbered assistant block
+				{ role: 'assistant', content: 'assG' },
+
+				// Group 6 (User) - only unnumbered user block
+				{ role: 'user', content: 'userH' },
+
+				// Group 7 (Assistant candidates for second turn)
+				{ role: 'assistant1', content: 'assI' },
+				{ role: 'assistant3', content: 'assJ' },
+
+				// Group 8 (User) - only unnumbered user block
+				{ role: 'user', content: 'userK' },
+			]
+
+			const forModel1 = filterMessagesForModel(messages, 0, 3) // indices 0-based -> target 'assistant1'
+			expect(forModel1.map((m) => m.content)).toEqual([
+				'sys',
+				'userB',
+				'assC',
+				'userF',
+				'assG',
+				'userH',
+				'assI',
+				'userK',
+			])
+
+			const forModel2 = filterMessagesForModel(messages, 1, 3) // target 'assistant2'
+			expect(forModel2.map((m) => m.content)).toEqual([
+				'sys',
+				'userB',
+				'assD',
+				'userF',
+				'assG',
+				'userH',
+				'assI',
+				'userK',
+			])
+
+			const forModel3 = filterMessagesForModel(messages, 2, 3) // target 'assistant3'
+			expect(forModel3.map((m) => m.content)).toEqual([
+				'sys',
+				'userB',
+				'assE',
+				'userF',
+				'assG',
+				'userH',
+				'assJ',
+				'userK',
+			])
+
+			// Ensure OpenAI roles are strictly mapped (numbered suffixes removed)
+			for (const msg of forModel1.concat(forModel2).concat(forModel3)) {
+				expect(['system', 'user', 'assistant'].includes(msg.role as string)).toBe(true)
+			}
 		})
 	})
 })

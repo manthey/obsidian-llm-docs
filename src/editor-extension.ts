@@ -70,7 +70,7 @@ class LlmDocsCodemirrorPlugin implements PluginValue {
 		let promptStart: number | null = null
 		for (const line of doc.iterLines(startLine.number, endLine.number + 1)) {
 			if (line.startsWith('# ')) {
-				if (line === '# system') {
+				if (line.match(/^# system\d*$/)) {
 					promptStart = null
 					builder.add(
 						offset,
@@ -79,7 +79,7 @@ class LlmDocsCodemirrorPlugin implements PluginValue {
 							class: 'llmdocs-heading-system',
 						}),
 					)
-				} else if (line === '# user') {
+				} else if (line.match(/^# user\d*$/)) {
 					promptStart = offset + line.length
 					builder.add(
 						offset,

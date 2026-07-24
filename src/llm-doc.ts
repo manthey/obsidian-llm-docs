@@ -124,14 +124,16 @@ export class LlmDoc {
 				frontmatter.model = modelProp
 			})
 		}
-		const effectiveToolServers = this.properties.toolServerOverrides ?? toolServers
 		let mcpManager: McpManager | null = null
-		if (effectiveToolServers.length > 0) {
-			mcpManager = new McpManager()
-			try {
-				await mcpManager.connect(effectiveToolServers)
-			} catch (error) {
-				console.error('Failed to connect to MCP servers:', error)
+		if (this.properties.toolFilters === undefined || this.properties.toolFilters?.length > 0) {
+			const effectiveToolServers = this.properties.toolServerOverrides ?? toolServers
+			if (effectiveToolServers.length > 0) {
+				mcpManager = new McpManager()
+				try {
+					await mcpManager.connect(effectiveToolServers)
+				} catch (error) {
+					console.error('Failed to connect to MCP servers:', error)
+				}
 			}
 		}
 		for (let i = 0; i < models.length; i++) {
