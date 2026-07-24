@@ -118,16 +118,55 @@ async function expandLinks(
 const linkPattern = /!?\[\[(.+?)]]|!?\[.*?\]\((.+?)\)/g
 const splitLinks = (content: string) => splitKeepingSeparators(content, linkPattern)
 
+function selectFromGroup(messages: ParsedMessage[], modelIndex: number, modelCount: number): OpenaiBasicMessage {
+	const baseRole = messages[0].role.replace(/\d+$/, '') as 'system' | 'user' | 'assistant'
+
+	// Determine exactly which role string we're targeting
+	const targetTag = modelCount > 1 ? `${baseRole}${modelIndex + 1}` : baseRole
+
+	// (a) find the matching numbered block
+	const match = messages.find((m) => m.role === targetTag)
+	if (match) return { role: baseRole, content: match.content }
+
+	// (b) if there is no matching numbered block, use the unnumbered block
+	const unnumbered = messages.find((m) => m.role === baseRole)
+	if (unnumbered) return { role: baseRole, content: unnumbered.content }
+
+	// (c) if there is no unnumbered block, use the first numbered block regardless of its number
+	return { role: baseRole, content: messages[0].content }
+}
+
 export function filterMessagesForModel(
 	messages: ParsedMessage[],
 	modelIndex: number,
 	modelCount: number,
 ): OpenaiBasicMessage[] {
-	const tag = modelCount > 1 ? `assistant${modelIndex + 1}` : 'assistant'
-	return messages
-		.filter((m) => m.role === 'system' || m.role === 'user' || m.role === tag)
-		.map((m) => ({
-			role: (m.role === tag ? 'assistant' : m.role) as OpenaiRole,
-			content: m.content,
-		}))
+	const result: OpenaiBasicMessage[] = []
+	let currentGroup: ParsedMessage[] = []
+	let currentBaseRole: string | null = null
+	const filterRoles = ['system', 'user', 'assistant']
+
+	for (const msg of messages) {
+		const baseRole = msg.role.replace(/\d+$/, '') as 'system' | 'user' | 'assistant'
+
+		// Only group and process valid conversation roles
+		if (!filterRoles.includes(baseRole)) continue
+
+		// Group changes when the base role changes (starts a new conversation step)
+		if (currentBaseRole && currentBaseRole !== baseRole) {
+			result.push(selectFromGroup(currentGroup, modelIndex, modelCount))
+			currentGroup = []
+			currentBaseRole = null
+		}
+
+		currentGroup.push(msg)
+		currentBaseRole = baseRole
+	}
+
+	// Flush the final group
+	if (currentGroup.length > 0) {
+		result.push(selectFromGroup(currentGroup, modelIndex, modelCount))
+	}
+
+	return result
 }
