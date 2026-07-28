@@ -1,5 +1,11 @@
 import { describe, expect, it } from '@jest/globals'
-import { messagesToText, preprocessMessages, textToMessages, filterMessagesForModel, ParsedMessage } from './llm-doc-util'
+import {
+	messagesToText,
+	preprocessMessages,
+	textToMessages,
+	filterMessagesForModel,
+	ParsedMessage,
+} from './llm-doc-util'
 import { OpenaiBasicMessage } from './open-ai'
 
 describe('LLM doc util', () => {

@@ -1,5 +1,5 @@
 import { App, getIcon, SuggestModal } from 'obsidian'
-import { PluginSettings } from '../settings'
+import { PluginSettings, LlmConnectionSettings } from '../settings'
 import { getAllAvailableModelsAndUpdateCache, getConnectionId, modelToConnectionCache } from '../connection-models'
 import { modelCacheUpdated } from '../registry'
 import { ValueEmitter } from '../utils'
@@ -12,14 +12,22 @@ export class ModelPickerModal extends SuggestModal<Model> {
 		this.refreshModels()
 	})
 
+	private alternateConnections?: LlmConnectionSettings
+
 	constructor(
 		app: App,
 		private plugin: LlmDocsPlugin,
+		alternateConnections?: LlmConnectionSettings,
 	) {
 		super(app)
+		this.alternateConnections = alternateConnections
 		this.refreshModels()
 		this.emptyStateText = this.getEmptyStateText()
 		this.setPlaceholder('Select a model...')
+	}
+
+	private getAllowedConns(): LlmConnectionSettings[] {
+		return this.alternateConnections ? [this.alternateConnections] : this.plugin.settings.connections
 	}
 
 	async openAndGetResult(): Promise<string | null> {
@@ -33,13 +41,15 @@ export class ModelPickerModal extends SuggestModal<Model> {
 
 	private refreshModels() {
 		const collator = new Intl.Collator()
-		this.models = getCachedModels(this.plugin.settings).sort((a, b) => collator.compare(sortKey(a), sortKey(b)))
+		this.models = getCachedModels(this.plugin.settings, this.getAllowedConns()).sort((a, b) =>
+			collator.compare(sortKey(a), sortKey(b)),
+		)
 		// a bit dangerous as we are invoking internals, but there's no other way to refresh the list once opened
 		;(this as any).updateSuggestions()
 	}
 
 	private getEmptyStateText(): string {
-		if (!this.plugin.settings.connections.length) {
+		if (!this.plugin.settings.connections.length && !this.alternateConnections) {
 			return `No results. You need to add a connection first!`
 		}
 		return 'Loading...'
@@ -82,8 +92,7 @@ export class ModelPickerModal extends SuggestModal<Model> {
 
 	onOpen() {
 		super.onOpen()
-
-		getAllAvailableModelsAndUpdateCache(this.plugin.settings.connections).then()
+		getAllAvailableModelsAndUpdateCache(this.getAllowedConns()).then()
 	}
 
 	onClose() {
@@ -113,13 +122,13 @@ interface Model {
 
 const modelExclusionList = [/^dall-e/, /embedding/, /(^|-)tts(-|$)/, /^whisper-/]
 
-function getCachedModels(settings: PluginSettings): Model[] {
+function getCachedModels(settings: PluginSettings, connectionsToUse: LlmConnectionSettings[]): Model[] {
 	const defaultModel = settings.defaults.model
 	const pinnedModels = settings.pinnedModels
 
 	const connectionUrls = new Map<string, string>()
 	const connectionIndices = new Map<string, number>()
-	settings.connections.forEach((connection, index) => {
+	connectionsToUse.forEach((connection, index) => {
 		const connectionId = getConnectionId(connection)
 		connectionUrls.set(connectionId, removeProtocol(connection.baseUrl))
 		connectionIndices.set(connectionId, index)

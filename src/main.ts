@@ -1,7 +1,7 @@
 import { Editor, MarkdownView, normalizePath, Notice, Plugin, TFile } from 'obsidian'
 
 import { LlmDoc } from './llm-doc'
-import { defaultPluginSettings, DocOpenMethods, PluginSettings } from './settings'
+import { LlmConnectionSettings, defaultPluginSettings, DocOpenMethods, PluginSettings } from './settings'
 import { llmDocsCodemirrorPlugin } from './editor-extension'
 import { OpenaiBasicMessage } from './open-ai'
 import {
@@ -67,7 +67,17 @@ export default class LlmDocsPlugin extends Plugin implements ILlmDocsPlugin {
 			editorCallback: async (editor, view) => {
 				if (!view.file) return
 
-				const model = await new ModelPickerModal(this.app, this).openAndGetResult()
+				let llmConnectionUrl: string | undefined
+				await this.app.fileManager.processFrontMatter(view.file, (fm) => {
+					if (typeof fm.llm_connection === 'string') {
+						llmConnectionUrl = fm.llm_connection
+					}
+				})
+				const customConns: LlmConnectionSettings[] = llmConnectionUrl
+					? [{ type: 'OpenAI' as const, baseUrl: llmConnectionUrl, apiKey: '' }]
+					: []
+				const modelPickerModal = new ModelPickerModal(this.app, this, customConns[0])
+				const model = await modelPickerModal.openAndGetResult()
 				if (model) {
 					await this.app.fileManager.processFrontMatter(view.file, (frontmatter) => {
 						const existingModel = frontmatter.model
@@ -86,7 +96,18 @@ export default class LlmDocsPlugin extends Plugin implements ILlmDocsPlugin {
 			editorCallback: async (editor, view) => {
 				if (!view.file) return
 
-				const model = await new ModelPickerModal(this.app, this).openAndGetResult()
+				let llmConnectionUrl: string | undefined
+				await this.app.fileManager.processFrontMatter(view.file, (fm) => {
+					if (typeof fm.llm_connection === 'string') {
+						llmConnectionUrl = fm.llm_connection
+					}
+				})
+				const customConns: LlmConnectionSettings[] = llmConnectionUrl
+					? [{ type: 'OpenAI' as const, baseUrl: llmConnectionUrl, apiKey: '' }]
+					: []
+
+				const modelPickerModal = new ModelPickerModal(this.app, this, customConns[0])
+				const model = await modelPickerModal.openAndGetResult()
 				if (model) {
 					await this.app.fileManager.processFrontMatter(view.file, (frontmatter) => {
 						let modelList = frontmatter.model
